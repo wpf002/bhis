@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     REGISTER_RATE_LIMIT: int = 5
     RATE_LIMIT_WINDOW_SECONDS: int = 60
 
+    # A completed survey faster than this is flagged as a likely bot/low-effort.
+    MIN_COMPLETION_SECONDS: int = 120
+
     class Config:
         env_file = ".env"
 

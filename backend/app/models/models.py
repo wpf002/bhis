@@ -160,6 +160,7 @@ class RespondentSession(Base):
     completed_at = Column(DateTime(timezone=True))
     completion_time_seconds = Column(Integer)
     is_complete = Column(Boolean, default=False)
+    flagged_fast = Column(Boolean, default=False, nullable=False)  # completed implausibly fast (bot signal)
 
     survey_instance = relationship("SurveyInstance", back_populates="sessions")
     responses = relationship("Response", back_populates="session")

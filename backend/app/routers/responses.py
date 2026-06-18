@@ -1,11 +1,13 @@
+from datetime import datetime, timezone
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import datetime
-from typing import Optional
 
+from app.config import settings
 from app.database import get_db
-from app.models import RespondentSession, Response, SurveyInstance
+from app.models import RespondentSession, Response, SurveyInstance, Question
 from app.schemas import SessionStart, SessionResponse, BulkResponseSubmit
 from app.core.security import generate_capability_token
 
@@ -68,18 +70,39 @@ async def submit_responses(
     x_session_token: Optional[str] = Header(default=None),
 ):
     session = await _authorize_session(session_id, x_session_token, db)
+    if session.is_complete:
+        raise HTTPException(status_code=409, detail="Session already completed")
+
+    instance = (await db.execute(
+        select(SurveyInstance).where(SurveyInstance.id == session.survey_instance_id)
+    )).scalar_one_or_none()
+    if not instance or instance.status != "active":
+        raise HTTPException(status_code=409, detail="Survey is not accepting responses")
 
     for r in payload.responses:
-        response = Response(
-            session_id=session.id,
-            question_id=r.question_id,
-            selected_option_id=r.selected_option_id,
-            likert_value=r.likert_value,
-            text_response=r.text_response,
-            ranking_order=r.ranking_order,
-            response_time_seconds=r.response_time_seconds,
-        )
-        db.add(response)
+        # Idempotent: one row per (session, question). Re-submitting overwrites.
+        existing = (await db.execute(
+            select(Response).where(
+                Response.session_id == session.id,
+                Response.question_id == r.question_id,
+            )
+        )).scalar_one_or_none()
+        if existing is not None:
+            existing.selected_option_id = r.selected_option_id
+            existing.likert_value = r.likert_value
+            existing.text_response = r.text_response
+            existing.ranking_order = r.ranking_order
+            existing.response_time_seconds = r.response_time_seconds
+        else:
+            db.add(Response(
+                session_id=session.id,
+                question_id=r.question_id,
+                selected_option_id=r.selected_option_id,
+                likert_value=r.likert_value,
+                text_response=r.text_response,
+                ranking_order=r.ranking_order,
+                response_time_seconds=r.response_time_seconds,
+            ))
 
     await db.commit()
     return {"status": "saved", "count": len(payload.responses)}
@@ -92,8 +115,45 @@ async def complete_session(
     x_session_token: Optional[str] = Header(default=None),
 ):
     session = await _authorize_session(session_id, x_session_token, db)
+    if session.is_complete:
+        # Idempotent: completing an already-complete session is a no-op.
+        return {"status": "complete", "session_id": session_id}
 
+    instance = (await db.execute(
+        select(SurveyInstance).where(SurveyInstance.id == session.survey_instance_id)
+    )).scalar_one_or_none()
+    if instance is None:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
+    # Every required (non-open-ended, non-qualitative) question must be answered.
+    required_ids = set((await db.execute(
+        select(Question.id).where(
+            Question.template_id == instance.template_id,
+            Question.question_type != "open_ended",
+            Question.qualitative_only == False,  # noqa: E712
+        )
+    )).scalars().all())
+    answered_ids = set((await db.execute(
+        select(Response.question_id).where(Response.session_id == session.id)
+    )).scalars().all())
+    missing = required_ids - answered_ids
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{len(missing)} required question(s) unanswered",
+        )
+
+    now = datetime.now(timezone.utc)
+    elapsed = (now - session.started_at).total_seconds() if session.started_at else None
     session.is_complete = True
-    session.completed_at = datetime.utcnow()
+    session.completed_at = now
+    if elapsed is not None:
+        session.completion_time_seconds = int(elapsed)
+        session.flagged_fast = elapsed < settings.MIN_COMPLETION_SECONDS
+
     await db.commit()
-    return {"status": "complete", "session_id": session_id}
+    return {
+        "status": "complete",
+        "session_id": session_id,
+        "flagged_fast": session.flagged_fast,
+    }
