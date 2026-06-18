@@ -7,11 +7,11 @@ from sqlalchemy import select, update
 
 from app.config import settings
 from app.database import get_db
-from app.models import User, AuthToken, RefreshToken
+from app.models import User, AuthToken, RefreshToken, ChurchInvite
 from app.schemas import (
     RegisterRequest, LoginRequest, TokenResponse, RefreshRequest,
     VerifyEmailRequest, ResendVerificationRequest,
-    ForgotPasswordRequest, ResetPasswordRequest,
+    ForgotPasswordRequest, ResetPasswordRequest, RegisterViaInvite,
 )
 from app.core.security import (
     hash_password, verify_password, create_access_token, create_refresh_token,
@@ -96,6 +96,49 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db))
     )
     db.add(user)
     await db.flush()
+    await _send_verification(db, user)
+    refresh_token = await _issue_refresh(db, user)
+    await db.commit()
+    await db.refresh(user)
+
+    return TokenResponse(
+        access_token=create_access_token({"sub": user.id}),
+        refresh_token=refresh_token,
+        user_id=user.id,
+        role=user.role,
+    )
+
+
+@router.post(
+    "/register-via-invite", response_model=TokenResponse, status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit(register_limiter))],
+)
+async def register_via_invite(payload: RegisterViaInvite, db: AsyncSession = Depends(get_db)):
+    invite = (await db.execute(
+        select(ChurchInvite).where(ChurchInvite.token_hash == hash_token(payload.token))
+    )).scalar_one_or_none()
+    if invite is None or invite.used_at is not None or invite.expires_at < _utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired invite")
+
+    # A pinned invite forces its address; otherwise the registrant supplies one.
+    email = invite.email or payload.email
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required for this invite")
+
+    if (await db.execute(select(User).where(User.email == email))).scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    user = User(
+        email=email,
+        password_hash=hash_password(payload.password),
+        first_name=payload.first_name,
+        last_name=payload.last_name,
+        role=invite.role,
+        church_id=invite.church_id,
+    )
+    db.add(user)
+    await db.flush()
+    invite.used_at = _utcnow()
     await _send_verification(db, user)
     refresh_token = await _issue_refresh(db, user)
     await db.commit()

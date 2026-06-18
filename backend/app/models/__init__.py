@@ -3,5 +3,5 @@ from app.models.models import (
     Question, QuestionOption, RespondentSession, Response,
     IndividualScore, PillarScore, ContradictionFlag,
     ChurchAggregateScore, Recommendation,
-    ReportDelivery, UserReportToken, AuthToken, RefreshToken,
+    ReportDelivery, UserReportToken, AuthToken, RefreshToken, ChurchInvite,
 )

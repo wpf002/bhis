@@ -1,14 +1,52 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.config import settings
 from app.database import get_db
-from app.models import Church, User, ChurchAggregateScore
-from app.schemas import ChurchCreate, ChurchResponse, ChurchDashboardSchema
+from app.models import Church, User, ChurchAggregateScore, ChurchInvite
+from app.schemas import ChurchCreate, ChurchResponse, ChurchDashboardSchema, InviteCreate, InviteResponse
 from app.services.privacy import is_below_floor, suppressed_payload
+from app.core.security import generate_capability_token, hash_token
 from app.core.dependencies import get_current_user, require_role
 
 router = APIRouter()
+
+
+@router.post("/{church_id}/invites", response_model=InviteResponse, status_code=201)
+async def create_invite(
+    church_id: str,
+    payload: InviteCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "leader")),
+):
+    """Generate a single-use invite to register into this church with a preset
+    role. An admin/leader may only invite into their OWN church."""
+    church = (await db.execute(select(Church).where(Church.id == church_id))).scalar_one_or_none()
+    if not church:
+        raise HTTPException(status_code=404, detail="Church not found")
+    if current_user.church_id != church_id:
+        raise HTTPException(status_code=403, detail="Cannot invite into another church")
+
+    raw = generate_capability_token()
+    expires_at = datetime.now(timezone.utc) + timedelta(days=payload.expires_in_days)
+    db.add(ChurchInvite(
+        church_id=church_id,
+        role=payload.role,
+        email=payload.email,
+        token_hash=hash_token(raw),
+        expires_at=expires_at,
+        created_by=current_user.id,
+    ))
+    await db.commit()
+    return InviteResponse(
+        token=raw,
+        join_url=f"{settings.FRONTEND_URL}/join/{raw}",
+        role=payload.role,
+        expires_at=expires_at,
+    )
 
 
 @router.post("", response_model=ChurchResponse, status_code=201)

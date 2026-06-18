@@ -48,6 +48,27 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 
+class InviteCreate(BaseModel):
+    role: str = "leader"
+    email: Optional[EmailStr] = None
+    expires_in_days: int = 14
+
+
+class InviteResponse(BaseModel):
+    token: str
+    join_url: str
+    role: str
+    expires_at: datetime
+
+
+class RegisterViaInvite(BaseModel):
+    token: str
+    password: str
+    first_name: str
+    last_name: str
+    email: Optional[EmailStr] = None
+
+
 # ── Churches ──────────────────────────────────────────────────────────────────
 
 class ChurchCreate(BaseModel):

@@ -329,3 +329,19 @@ class RefreshToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     revoked = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ChurchInvite(Base):
+    """A single-use invite that lets someone register into a specific church with
+    a preset role. Only the token hash is stored."""
+    __tablename__ = "church_invites"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
+    church_id = Column(UUID(as_uuid=False), ForeignKey("churches.id"), nullable=False, index=True)
+    role = Column(String(50), nullable=False, default="leader")
+    email = Column(String(255))  # optional: pin the invite to a specific address
+    token_hash = Column(String(64), nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True))
+    created_by = Column(UUID(as_uuid=False), ForeignKey("users.id"))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
