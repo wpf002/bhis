@@ -4,37 +4,23 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import IndividualScore, ChurchAggregateScore, User
+from app.models import (
+    IndividualScore, ChurchAggregateScore, RespondentSession,
+    UserReportToken, User,
+)
+from app.schemas import ClaimReportRequest
 from app.services.recommendation_engine import generate_church_recommendations, generate_individual_recommendations
-from app.services.privacy import apply_min_n_floor, is_below_floor, suppressed_payload
+from app.services.privacy import is_below_floor, suppressed_payload
 from app.core.dependencies import get_current_user, require_role
 
 # ── Reports ───────────────────────────────────────────────────────────────────
 router = APIRouter()
 
 
-@router.get("/individual/{session_id}")
-async def individual_report(
-    session_id: str,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    result = await db.execute(
-        select(IndividualScore)
-        .where(IndividualScore.session_id == session_id)
-        .options(
-            selectinload(IndividualScore.pillar_scores),
-            selectinload(IndividualScore.contradiction_flags),
-        )
-    )
-    score = result.scalar_one_or_none()
-    if not score:
-        raise HTTPException(status_code=404, detail="Score not found")
-
+def _serialize_individual_score(score: IndividualScore) -> dict:
     pillar_scores = {ps.pillar: ps.normalized_score for ps in score.pillar_scores}
     pillar_statuses = {ps.pillar: ps.status for ps in score.pillar_scores}
     recs = generate_individual_recommendations(pillar_scores, score.maturity_tier, score.credibility_warning)
-
     return {
         "composite_score": score.composite_score,
         "maturity_tier": score.maturity_tier,
@@ -57,6 +43,85 @@ async def individual_report(
             for r in recs
         ],
     }
+
+
+async def _score_for_token(token: str, db: AsyncSession) -> IndividualScore:
+    """Resolve an individual score from a capability token, with no identity
+    lookup. The token is the authority — there is intentionally no JWT/role path
+    to an individual's report, so a church admin cannot reach it (see
+    docs/anonymity-design.md)."""
+    session_result = await db.execute(
+        select(RespondentSession).where(RespondentSession.anonymous_token == token)
+    )
+    session = session_result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    result = await db.execute(
+        select(IndividualScore)
+        .where(IndividualScore.session_id == session.id)
+        .options(
+            selectinload(IndividualScore.pillar_scores),
+            selectinload(IndividualScore.contradiction_flags),
+        )
+    )
+    score = result.scalar_one_or_none()
+    if not score:
+        raise HTTPException(status_code=404, detail="Report not scored yet")
+    return score
+
+
+@router.get("/individual/by-token/{token}")
+async def individual_report_by_token(
+    token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """A member reads their OWN report by presenting the capability token they
+    received at survey start. No login; no identity is ever resolved."""
+    score = await _score_for_token(token, db)
+    return _serialize_individual_score(score)
+
+
+@router.post("/claim", status_code=201)
+async def claim_report(
+    payload: ClaimReportRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Optional: attach a capability token to the logged-in user's personal
+    keyring so they can find their report later. This stores an opaque token
+    against the user — it creates NO link the church can traverse from a
+    response back to the member."""
+    # The token must actually resolve to a session (can't keyring a random string).
+    session_result = await db.execute(
+        select(RespondentSession).where(RespondentSession.anonymous_token == payload.session_token)
+    )
+    if session_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    existing = await db.execute(
+        select(UserReportToken).where(
+            UserReportToken.user_id == current_user.id,
+            UserReportToken.session_token == payload.session_token,
+        )
+    )
+    if existing.scalar_one_or_none() is None:
+        db.add(UserReportToken(user_id=current_user.id, session_token=payload.session_token))
+        await db.commit()
+    return {"status": "claimed"}
+
+
+@router.get("/mine")
+async def my_reports(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List the capability tokens on the current user's keyring."""
+    result = await db.execute(
+        select(UserReportToken).where(UserReportToken.user_id == current_user.id)
+    )
+    tokens = result.scalars().all()
+    return {"reports": [{"session_token": t.session_token, "claimed_at": t.created_at} for t in tokens]}
 
 
 @router.get("/church/{instance_id}")

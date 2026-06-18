@@ -104,7 +104,6 @@ class QuestionSchema(BaseModel):
 
 class SessionStart(BaseModel):
     survey_instance_id: str
-    anonymous_token: Optional[str] = None
 
 
 class SessionResponse(BaseModel):
@@ -112,9 +111,18 @@ class SessionResponse(BaseModel):
     survey_instance_id: str
     started_at: datetime
     is_complete: bool
+    # The capability token is returned ONCE on session creation. The member keeps
+    # it (bookmark / email / account keyring) to reach their report later. It is
+    # never exposed to church roles.
+    anonymous_token: str
 
     class Config:
         from_attributes = True
+
+
+class ClaimReportRequest(BaseModel):
+    """Attach a capability token to the logged-in user's personal keyring."""
+    session_token: str
 
 
 class ResponseSubmit(BaseModel):

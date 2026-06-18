@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -7,6 +8,12 @@ from passlib.context import CryptContext
 from app.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def generate_capability_token() -> str:
+    """High-entropy, unguessable token a member uses to reach their own report
+    (the anonymity capability). ~256 bits; see docs/anonymity-design.md."""
+    return secrets.token_urlsafe(32)
 
 
 def hash_password(password: str) -> str:

@@ -58,7 +58,10 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     church = relationship("Church", back_populates="users")
-    sessions = relationship("RespondentSession", back_populates="user")
+    # NOTE: no relationship to RespondentSession. Survey sessions are anonymous and
+    # carry no user_id — a member retrieves their report via capability token, not
+    # identity. Optional account linkage is an opaque keyring (UserReportToken).
+    report_tokens = relationship("UserReportToken", back_populates="user")
 
 
 # ── Survey Templates ──────────────────────────────────────────────────────────
@@ -148,15 +151,16 @@ class RespondentSession(Base):
 
     id = Column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
     survey_instance_id = Column(UUID(as_uuid=False), ForeignKey("survey_instances.id"), nullable=False)
-    user_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=True)
-    anonymous_token = Column(String(255))
+    # No user_id. Identity is severed from responses by design (see
+    # docs/anonymity-design.md). The session is reached only via anonymous_token,
+    # an unguessable capability the member holds and the church never sees.
+    anonymous_token = Column(String(255), nullable=False, unique=True, index=True)
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True))
     completion_time_seconds = Column(Integer)
     is_complete = Column(Boolean, default=False)
 
     survey_instance = relationship("SurveyInstance", back_populates="sessions")
-    user = relationship("User", back_populates="sessions")
     responses = relationship("Response", back_populates="session")
     individual_score = relationship("IndividualScore", back_populates="session", uselist=False)
 
@@ -264,3 +268,34 @@ class Recommendation(Base):
     intervention = Column(Text)
     reassessment_timeline = Column(String(50))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ── Anonymity: report retrieval without re-identification ─────────────────────
+# See docs/anonymity-design.md. Both tables are deliberately NOT linked to
+# churches, and the email-delivery table is not linked to users either — there
+# is no FK path a church admin could traverse from church_id to a respondent.
+
+class ReportDelivery(Base):
+    """Emailing a member their own report link, keyed only by the capability
+    token. No church_id, no user_id — severed from any identity the church holds."""
+    __tablename__ = "report_deliveries"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
+    session_token = Column(String(255), nullable=False, index=True)  # = RespondentSession.anonymous_token
+    email = Column(String(255), nullable=False)  # member's own address, for sending only
+    sent_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserReportToken(Base):
+    """Optional post-survey account = a personal keyring of capability tokens.
+    Keyed from the user side; row access is restricted to the owning user, so a
+    church admin still cannot link any response to a member."""
+    __tablename__ = "user_report_tokens"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
+    user_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=False, index=True)
+    session_token = Column(String(255), nullable=False)  # the capability the member already holds
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="report_tokens")
