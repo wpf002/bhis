@@ -346,3 +346,18 @@ class ChurchInvite(Base):
     used_at = Column(DateTime(timezone=True))
     created_by = Column(UUID(as_uuid=False), ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class QuestionCondition(Base):
+    """Skip-logic foundation (Phase 6): show/hide a question based on a prior
+    answer. Defined now so the schema is in place; not yet evaluated during
+    serving."""
+    __tablename__ = "question_conditions"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
+    question_id = Column(UUID(as_uuid=False), ForeignKey("questions.id"), nullable=False, index=True)
+    depends_on_question_id = Column(UUID(as_uuid=False), ForeignKey("questions.id"), nullable=False)
+    operator = Column(String(20), nullable=False, default="equals")  # equals|not_equals|gt|lt|in
+    value = Column(String(255))  # option_letter or numeric threshold
+    action = Column(String(20), nullable=False, default="show")  # show | hide
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

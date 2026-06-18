@@ -4,4 +4,5 @@ from app.models.models import (
     IndividualScore, PillarScore, ContradictionFlag,
     ChurchAggregateScore, Recommendation,
     ReportDelivery, UserReportToken, AuthToken, RefreshToken, ChurchInvite,
+    QuestionCondition,
 )
