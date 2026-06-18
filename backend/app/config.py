@@ -10,6 +10,13 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ENVIRONMENT: str = "development"
 
+    # Email — defaults to the in-process console backend so nothing sends by
+    # accident. Set EMAIL_BACKEND=sendgrid + SENDGRID_API_KEY in production.
+    EMAIL_BACKEND: str = "console"
+    EMAIL_FROM: str = "no-reply@bhis.local"
+    SENDGRID_API_KEY: str = ""
+    FRONTEND_URL: str = "http://localhost:5173"
+
     class Config:
         env_file = ".env"
 

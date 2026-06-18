@@ -1,16 +1,21 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import get_db
 from app.models import (
     IndividualScore, ChurchAggregateScore, RespondentSession,
-    UserReportToken, User,
+    UserReportToken, ReportDelivery, User,
 )
-from app.schemas import ClaimReportRequest
+from app.schemas import ClaimReportRequest, DeliverReportRequest
 from app.services.recommendation_engine import generate_church_recommendations, generate_individual_recommendations
 from app.services.privacy import is_below_floor, suppressed_payload
+from app.services.email import send_email
+from app.services.email.templates import report_ready
 from app.core.dependencies import get_current_user, require_role
 
 # ── Reports ───────────────────────────────────────────────────────────────────
@@ -80,6 +85,32 @@ async def individual_report_by_token(
     received at survey start. No login; no identity is ever resolved."""
     score = await _score_for_token(token, db)
     return _serialize_individual_score(score)
+
+
+@router.post("/deliver", status_code=201)
+async def deliver_report(
+    payload: DeliverReportRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Email a member their own report link. Anonymous: authority is the
+    capability token, not a login. The email address is recorded only to send,
+    in a row with no church_id/user_id — the church cannot traverse to it."""
+    session_result = await db.execute(
+        select(RespondentSession).where(RespondentSession.anonymous_token == payload.session_token)
+    )
+    if session_result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    delivery = ReportDelivery(session_token=payload.session_token, email=payload.email)
+    db.add(delivery)
+
+    report_url = f"{settings.FRONTEND_URL}/report/{payload.session_token}"
+    subject, html = report_ready(report_url)
+    send_email(to=payload.email, subject=subject, html=html)
+
+    delivery.sent_at = datetime.utcnow()
+    await db.commit()
+    return {"status": "sent"}
 
 
 @router.post("/claim", status_code=201)

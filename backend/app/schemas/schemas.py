@@ -125,6 +125,13 @@ class ClaimReportRequest(BaseModel):
     session_token: str
 
 
+class DeliverReportRequest(BaseModel):
+    """Email a member their own report link. The email is used only to send;
+    it is stored severed from any church/user identity."""
+    session_token: str
+    email: EmailStr
+
+
 class ResponseSubmit(BaseModel):
     question_id: str
     selected_option_id: Optional[str] = None
