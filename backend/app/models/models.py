@@ -299,3 +299,20 @@ class UserReportToken(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="report_tokens")
+
+
+# ── Auth: single-use email/password tokens ────────────────────────────────────
+
+class AuthToken(Base):
+    """Single-use, purpose-scoped token for email verification and password
+    reset. Only a SHA-256 hash of the token is stored, so a DB leak does not
+    yield usable tokens."""
+    __tablename__ = "auth_tokens"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
+    user_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=False, index=True)
+    purpose = Column(String(30), nullable=False)  # verify_email | reset_password
+    token_hash = Column(String(64), nullable=False, index=True)  # sha256 hex
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

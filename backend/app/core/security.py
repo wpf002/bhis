@@ -16,6 +16,13 @@ def generate_capability_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def hash_token(raw: str) -> str:
+    """SHA-256 hex of a token, so only the hash is persisted (email/reset/invite
+    tokens). Lookups hash the presented token and compare."""
+    import hashlib
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 

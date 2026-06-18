@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     SENDGRID_API_KEY: str = ""
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Single-use auth token lifetimes
+    VERIFY_TOKEN_EXPIRE_HOURS: int = 24
+    RESET_TOKEN_EXPIRE_HOURS: int = 1
+
     class Config:
         env_file = ".env"
 
