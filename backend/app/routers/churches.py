@@ -7,7 +7,10 @@ from sqlalchemy import select
 from app.config import settings
 from app.database import get_db
 from app.models import Church, User, ChurchAggregateScore, ChurchInvite
-from app.schemas import ChurchCreate, ChurchResponse, ChurchDashboardSchema, InviteCreate, InviteResponse
+from app.schemas import (
+    ChurchCreate, ChurchResponse, ChurchDashboardSchema,
+    InviteCreate, InviteResponse, ChurchSettingsUpdate,
+)
 from app.services.privacy import is_below_floor, suppressed_payload
 from app.core.security import generate_capability_token, hash_token
 from app.core.dependencies import get_current_user, require_role
@@ -70,9 +73,48 @@ async def get_church(
 ):
     result = await db.execute(select(Church).where(Church.id == church_id))
     church = result.scalar_one_or_none()
-    if not church:
+    if not church or not church.is_active:
         raise HTTPException(status_code=404, detail="Church not found")
     return church
+
+
+@router.put("/{church_id}/settings", response_model=ChurchResponse)
+async def update_church_settings(
+    church_id: str,
+    payload: ChurchSettingsUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "leader")),
+):
+    """Update a church's settings. Admins/leaders may only edit their own church."""
+    church = (await db.execute(select(Church).where(Church.id == church_id))).scalar_one_or_none()
+    if not church or not church.is_active:
+        raise HTTPException(status_code=404, detail="Church not found")
+    if current_user.church_id != church_id:
+        raise HTTPException(status_code=403, detail="Cannot edit another church")
+
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(church, field, value)
+    await db.commit()
+    await db.refresh(church)
+    return church
+
+
+@router.delete("/{church_id}", status_code=200)
+async def deactivate_church(
+    church_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+):
+    """Soft-delete: deactivate the church (preserve data), admins of that church only."""
+    church = (await db.execute(select(Church).where(Church.id == church_id))).scalar_one_or_none()
+    if not church or not church.is_active:
+        raise HTTPException(status_code=404, detail="Church not found")
+    if current_user.church_id != church_id:
+        raise HTTPException(status_code=403, detail="Cannot deactivate another church")
+
+    church.is_active = False
+    await db.commit()
+    return {"status": "deactivated", "church_id": church_id}
 
 
 @router.get("/{church_id}/dashboard")
@@ -83,7 +125,7 @@ async def get_dashboard(
 ):
     result = await db.execute(select(Church).where(Church.id == church_id))
     church = result.scalar_one_or_none()
-    if not church:
+    if not church or not church.is_active:
         raise HTTPException(status_code=404, detail="Church not found")
 
     # Get latest aggregate score

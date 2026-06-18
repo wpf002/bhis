@@ -31,6 +31,7 @@ class Church(Base):
     timezone = Column(String(50), default="America/Chicago")
     theological_profile = Column(String(50))  # "evangelical", "reformed", etc.
     onboarding_complete = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True, nullable=False)  # soft-delete flag
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

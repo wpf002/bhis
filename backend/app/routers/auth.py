@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import List
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,12 +13,14 @@ from app.schemas import (
     RegisterRequest, LoginRequest, TokenResponse, RefreshRequest,
     VerifyEmailRequest, ResendVerificationRequest,
     ForgotPasswordRequest, ResetPasswordRequest, RegisterViaInvite,
+    LogoutRequest, SessionInfo,
 )
 from app.core.security import (
     hash_password, verify_password, create_access_token, create_refresh_token,
     decode_token, generate_capability_token, hash_token,
 )
 from app.core.ratelimit import RateLimiter, rate_limit
+from app.core.dependencies import get_current_user
 from app.services.email import send_email
 from app.services.email.templates import verify_email as verify_email_tmpl, reset_password as reset_password_tmpl
 
@@ -267,6 +270,48 @@ async def refresh(payload: RefreshRequest, db: AsyncSession = Depends(get_db)):
         user_id=user.id,
         role=user.role,
     )
+
+
+@router.post("/logout")
+async def logout(payload: LogoutRequest, db: AsyncSession = Depends(get_db)):
+    """Revoke the presented refresh token (single session). Idempotent."""
+    data = decode_token(payload.refresh_token)
+    jti = data.get("jti") if data else None
+    if jti:
+        await db.execute(
+            update(RefreshToken).where(RefreshToken.jti == jti).values(revoked=True)
+        )
+        await db.commit()
+    return {"status": "logged_out"}
+
+
+@router.get("/sessions", response_model=List[SessionInfo])
+async def list_sessions(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List the current user's active (un-revoked, un-expired) sessions."""
+    result = await db.execute(
+        select(RefreshToken).where(
+            RefreshToken.user_id == current_user.id,
+            RefreshToken.revoked == False,  # noqa: E712
+            RefreshToken.expires_at > _utcnow(),
+        ).order_by(RefreshToken.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+@router.post("/sessions/revoke-all")
+async def revoke_all_sessions(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Revoke every refresh token for the current user (sign out everywhere)."""
+    await db.execute(
+        update(RefreshToken).where(RefreshToken.user_id == current_user.id).values(revoked=True)
+    )
+    await db.commit()
+    return {"status": "all_revoked"}
 
 
 @router.get("/me")

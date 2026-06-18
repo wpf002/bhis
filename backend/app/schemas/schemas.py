@@ -69,6 +69,31 @@ class RegisterViaInvite(BaseModel):
     email: Optional[EmailStr] = None
 
 
+class LogoutRequest(BaseModel):
+    refresh_token: str
+
+
+class SessionInfo(BaseModel):
+    id: str
+    created_at: datetime
+    expires_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ChurchSettingsUpdate(BaseModel):
+    name: Optional[str] = None
+    denomination: Optional[str] = None
+    size_range: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    timezone: Optional[str] = None
+    theological_profile: Optional[str] = None
+    onboarding_complete: Optional[bool] = None
+
+
 # ── Churches ──────────────────────────────────────────────────────────────────
 
 class ChurchCreate(BaseModel):
