@@ -5,6 +5,7 @@ from sqlalchemy import select
 from app.database import get_db
 from app.models import Church, User, ChurchAggregateScore
 from app.schemas import ChurchCreate, ChurchResponse, ChurchDashboardSchema
+from app.services.privacy import is_below_floor, suppressed_payload
 from app.core.dependencies import get_current_user, require_role
 
 router = APIRouter()
@@ -56,13 +57,32 @@ async def get_dashboard(
     )
     agg = agg_result.scalar_one_or_none()
 
+    # No responses scored yet — nothing to suppress, just an empty dashboard.
+    if not agg:
+        return {
+            "church": church,
+            "health_score": None,
+            "archetype": None,
+            "drift_risk_level": None,
+            "drift_risk_score": None,
+            "respondent_count": None,
+            "maturity_distribution": None,
+            "pillar_scores": None,
+            "suppressed": False,
+        }
+
+    # Anonymity floor: below N_MIN respondents, withhold the breakdown.
+    if is_below_floor(agg.respondent_count):
+        return {"church": church, **suppressed_payload(agg.respondent_count)}
+
     return {
         "church": church,
-        "health_score": agg.health_score if agg else None,
-        "archetype": agg.archetype if agg else None,
-        "drift_risk_level": agg.drift_risk_level if agg else None,
-        "drift_risk_score": agg.drift_risk_score if agg else None,
-        "respondent_count": agg.respondent_count if agg else None,
-        "maturity_distribution": agg.maturity_distribution if agg else None,
-        "pillar_scores": agg.pillar_scores if agg else None,
+        "health_score": agg.health_score,
+        "archetype": agg.archetype,
+        "drift_risk_level": agg.drift_risk_level,
+        "drift_risk_score": agg.drift_risk_score,
+        "respondent_count": agg.respondent_count,
+        "maturity_distribution": agg.maturity_distribution,
+        "pillar_scores": agg.pillar_scores,
+        "suppressed": False,
     }

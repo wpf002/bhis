@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import IndividualScore, ChurchAggregateScore, User
 from app.services.recommendation_engine import generate_church_recommendations, generate_individual_recommendations
+from app.services.privacy import apply_min_n_floor, is_below_floor, suppressed_payload
 from app.core.dependencies import get_current_user, require_role
 
 # ── Reports ───────────────────────────────────────────────────────────────────
@@ -72,6 +73,11 @@ async def church_report(
     if not agg:
         raise HTTPException(status_code=404, detail="Church score not found. Run aggregation first.")
 
+    # Anonymity floor: below N_MIN respondents, withhold the entire breakdown
+    # (and the recommendations that derive from it) to prevent re-identification.
+    if is_below_floor(agg.respondent_count):
+        return suppressed_payload(agg.respondent_count)
+
     recs = generate_church_recommendations(agg.pillar_scores or {}, agg.archetype or "")
 
     return {
@@ -82,6 +88,7 @@ async def church_report(
         "drift_risk_score": agg.drift_risk_score,
         "maturity_distribution": agg.maturity_distribution,
         "pillar_scores": agg.pillar_scores,
+        "suppressed": False,
         "recommendations": [
             {
                 "priority": r.priority,
