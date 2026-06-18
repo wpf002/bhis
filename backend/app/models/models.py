@@ -198,6 +198,7 @@ class IndividualScore(Base):
     credibility_warning = Column(Boolean, default=False)
     drift_risk_level = Column(String(20))  # low | moderate | high | critical
     drift_signal_count = Column(Integer, default=0)
+    score_version = Column(String(20))  # scoring-engine version, for auditability
     calculated_at = Column(DateTime(timezone=True), server_default=func.now())
 
     session = relationship("RespondentSession", back_populates="individual_score")

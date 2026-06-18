@@ -80,6 +80,7 @@ class QuestionScore:
     normalized_score: float  # 0-100
     question_type: str
     qualitative_only: bool = False
+    weight: float = 1.0  # per-question weight within its pillar (default = equal)
 
 
 @dataclass
@@ -130,17 +131,17 @@ def normalize_option_score(score_value: int) -> float:
 # ── Pillar scoring ────────────────────────────────────────────────────────────
 
 def calculate_pillar_scores(question_scores: List[QuestionScore]) -> Dict[str, PillarResult]:
-    pillar_buckets: Dict[str, List[float]] = {p: [] for p in PILLARS}
+    pillar_buckets: Dict[str, List[QuestionScore]] = {p: [] for p in PILLARS}
 
     for qs in question_scores:
         if qs.qualitative_only:
             continue
         if qs.pillar in pillar_buckets:
-            pillar_buckets[qs.pillar].append(qs.normalized_score)
+            pillar_buckets[qs.pillar].append(qs)
 
     results = {}
-    for pillar, scores in pillar_buckets.items():
-        if not scores:
+    for pillar, items in pillar_buckets.items():
+        if not items:
             results[pillar] = PillarResult(
                 pillar=pillar,
                 raw_score=0.0,
@@ -150,13 +151,15 @@ def calculate_pillar_scores(question_scores: List[QuestionScore]) -> Dict[str, P
             )
             continue
 
-        raw = sum(scores) / len(scores)
+        # Weighted mean — with the default weight of 1.0 this is a plain average.
+        total_weight = sum(q.weight for q in items) or 1.0
+        raw = sum(q.normalized_score * q.weight for q in items) / total_weight
         status = _pillar_status(raw)
         results[pillar] = PillarResult(
             pillar=pillar,
             raw_score=raw,
             normalized_score=round(raw, 2),
-            question_count=len(scores),
+            question_count=len(items),
             status=status,
         )
 

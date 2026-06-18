@@ -59,12 +59,21 @@ async def db(sessionmaker_):
 
 @pytest_asyncio.fixture
 async def client(sessionmaker_):
+    import app.database as dbmod
+
     async def override_get_db():
         async with sessionmaker_() as session:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
+    # Background tasks open their own session via app.database.AsyncSessionLocal;
+    # point it at the test engine so auto-scoring runs against the test DB.
+    original_sessionmaker = dbmod.AsyncSessionLocal
+    dbmod.AsyncSessionLocal = sessionmaker_
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+    dbmod.AsyncSessionLocal = original_sessionmaker
     app.dependency_overrides.clear()

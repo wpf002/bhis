@@ -453,6 +453,32 @@ DOCTRINAL_QUESTION_WEIGHTS = {
 }
 
 
+# Map each Pillar 1 question (Q1–Q10) to the doctrine it primarily tests, taken
+# from the seed bank (seeds/pillar_1_questions.py). Q10 is a forced-prioritization
+# question spanning several core areas, so it keeps the default (equal) weight.
+DOCTRINAL_QUESTION_DOCTRINE = {
+    1: "salvation",          # how a person is made right with God (S7)
+    2: "scripture",          # Scripture authority (S1)
+    3: "christ",             # exclusivity of Christ (S3)
+    4: "sin_anthropology",   # nature of sin (S6)
+    5: "salvation",          # gospel confidence (S7)
+    6: "trinity",            # the Trinity (S2)
+    7: "sanctification",     # sanctification (S8)
+    8: "holy_spirit",        # the Holy Spirit's role (S4)
+    9: "eschatology",        # end times / eternal state (S11)
+    # 10: forced prioritization across core doctrines → default weight 1.0
+}
+
+
+def doctrinal_question_weight(question_number: int) -> float:
+    """Weight for a Pillar 1 question within the doctrinal_integrity pillar,
+    derived from the Watermark doctrine it tests. Defaults to 1.0."""
+    doctrine = DOCTRINAL_QUESTION_DOCTRINE.get(question_number)
+    if doctrine is None:
+        return 1.0
+    return DOCTRINAL_QUESTION_WEIGHTS.get(doctrine, 1.0)
+
+
 def get_doctrine_by_section(section: int) -> DoctrinalPosition | None:
     return next((d for d in WATERMARK_DOCTRINAL_FRAMEWORK if d.section == section), None)
 

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models import RespondentSession, Response, SurveyInstance, Question
 from app.schemas import SessionStart, SessionResponse, BulkResponseSubmit
 from app.core.security import generate_capability_token
+from app.services.scoring_pipeline import score_and_aggregate
 
 router = APIRouter()
 
@@ -111,6 +112,7 @@ async def submit_responses(
 @router.post("/sessions/{session_id}/complete")
 async def complete_session(
     session_id: str,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     x_session_token: Optional[str] = Header(default=None),
 ):
@@ -152,6 +154,10 @@ async def complete_session(
         session.flagged_fast = elapsed < settings.MIN_COMPLETION_SECONDS
 
     await db.commit()
+
+    # Auto-score and refresh the church aggregate without a manual trigger.
+    background_tasks.add_task(score_and_aggregate, session_id)
+
     return {
         "status": "complete",
         "session_id": session_id,
