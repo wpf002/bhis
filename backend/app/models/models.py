@@ -316,3 +316,16 @@ class AuthToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     used_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class RefreshToken(Base):
+    """One row per issued refresh token, tracked by jti so refresh rotation can
+    invalidate the prior token and detect reuse of a rotated/stolen token."""
+    __tablename__ = "refresh_tokens"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
+    user_id = Column(UUID(as_uuid=False), ForeignKey("users.id"), nullable=False, index=True)
+    jti = Column(String(64), nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

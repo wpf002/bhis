@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     VERIFY_TOKEN_EXPIRE_HOURS: int = 24
     RESET_TOKEN_EXPIRE_HOURS: int = 1
 
+    # Rate limiting (per client IP, fixed window in seconds)
+    LOGIN_RATE_LIMIT: int = 10
+    REGISTER_RATE_LIMIT: int = 5
+    RATE_LIMIT_WINDOW_SECONDS: int = 60
+
     class Config:
         env_file = ".env"
 

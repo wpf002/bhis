@@ -11,6 +11,7 @@ async-SQLAlchemy "attached to a different loop" pitfall.
 """
 import os
 
+import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
@@ -18,6 +19,16 @@ from sqlalchemy.pool import NullPool
 
 from app.main import app
 from app.database import Base, get_db
+from app.core.ratelimit import reset_all as reset_rate_limits
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    # The limiter is process-global and in-memory; clear it so request counts
+    # from one test don't trip 429s in the next.
+    reset_rate_limits()
+    yield
+    reset_rate_limits()
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
