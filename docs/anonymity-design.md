@@ -154,16 +154,18 @@ Saying exactly this on the consent screen builds more trust than an overbroad "1
 
 ## Implementation checklist (maps to Phase 1 Week 2)
 
-- [ ] Migration: remove/neutralize `respondent_sessions.user_id` (Option B recommended)
-- [ ] Generate ≥128-bit `anonymous_token` on session create; return to client only
-- [ ] `GET /report/{token}` resolves session → score with no identity lookup
-- [ ] `report_deliveries` table + email-send path with no church/user FK
-- [ ] `user_report_tokens` table for optional post-survey account (keyring model)
-- [ ] Aggregation layer enforces global + cell-level `N_MIN` (default 15)
-- [ ] Open-ended text excluded from all church-role responses; themes only
-- [ ] No API path from aggregate → individual for any church role
-- [ ] Tests: (a) church admin JWT cannot reach any individual response/score; (b) aggregate suppressed below N_MIN; (c) account creation does not populate any church-visible session→user link
-- [ ] Consent screen copy reflects the honest guarantee above
+- [x] Migration: drop `respondent_sessions.user_id` (Option B) — `0002_anonymity` (commit 836035a)
+- [x] Generate ≥128-bit `anonymous_token` on session create; return to client only — `generate_capability_token()` (~256-bit)
+- [x] Token retrieval resolves session → score with no identity lookup — `GET /reports/individual/by-token/{token}`
+- [x] `user_report_tokens` table for optional post-survey account (keyring) — `/reports/claim`, `/reports/mine`
+- [x] No API path from aggregate → individual for any church role — verified by test
+- [x] Global `N_MIN` floor (default 15) — `app/services/privacy.py` (commit 78603da)
+- [x] Tests: church admin can't reach an individual; aggregate suppressed below N_MIN; keyring is per-user — `tests/test_api_anonymity.py` (12 tests)
+- [x] `report_deliveries` **table** (severed from church/user FK) — created in `0002_anonymity`
+- [ ] Email **send path** writing to `report_deliveries` — deferred to the transactional-email phase (Phase 1 Week 1; provider not yet integrated)
+- [ ] Cell-level `N_MIN` suppression on segment breakdowns — deferred until segmentation lands (aggregate has no per-segment counts yet)
+- [ ] Open-ended verbatim excluded once a qualitative endpoint exists — current church endpoints expose only aggregates
+- [ ] Consent screen copy reflects the honest guarantee above — Phase 2 (frontend)
 
 ---
 
