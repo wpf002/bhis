@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -16,7 +16,24 @@ from app.services.recommendation_engine import generate_church_recommendations, 
 from app.services.privacy import is_below_floor, suppressed_payload
 from app.services.email import send_email
 from app.services.email.templates import report_ready
+from app.services.reports import (
+    render_individual_html, render_church_html, render_pdf, ReportError,
+)
 from app.core.dependencies import get_current_user, require_role
+
+
+def _export_response(html: str, fmt: str, filename: str) -> Response:
+    """Render an HTML report, or a PDF if requested and WeasyPrint is available."""
+    if fmt == "pdf":
+        try:
+            pdf = render_pdf(html)
+        except ReportError as exc:
+            raise HTTPException(status_code=501, detail=str(exc))
+        return Response(
+            content=pdf, media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'},
+        )
+    return Response(content=html, media_type="text/html")
 
 # ── Reports ───────────────────────────────────────────────────────────────────
 router = APIRouter()
@@ -155,27 +172,8 @@ async def my_reports(
     return {"reports": [{"session_token": t.session_token, "claimed_at": t.created_at} for t in tokens]}
 
 
-@router.get("/church/{instance_id}")
-async def church_report(
-    instance_id: str,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role("admin", "leader")),
-):
-    result = await db.execute(
-        select(ChurchAggregateScore)
-        .where(ChurchAggregateScore.survey_instance_id == instance_id)
-    )
-    agg = result.scalar_one_or_none()
-    if not agg:
-        raise HTTPException(status_code=404, detail="Church score not found. Run aggregation first.")
-
-    # Anonymity floor: below N_MIN respondents, withhold the entire breakdown
-    # (and the recommendations that derive from it) to prevent re-identification.
-    if is_below_floor(agg.respondent_count):
-        return suppressed_payload(agg.respondent_count)
-
+def _church_report_data(agg: ChurchAggregateScore) -> dict:
     recs = generate_church_recommendations(agg.pillar_scores or {}, agg.archetype or "")
-
     return {
         "health_score": agg.health_score,
         "archetype": agg.archetype,
@@ -199,3 +197,54 @@ async def church_report(
             for r in recs
         ],
     }
+
+
+async def _church_agg_or_404(instance_id: str, db: AsyncSession) -> ChurchAggregateScore:
+    agg = (await db.execute(
+        select(ChurchAggregateScore).where(ChurchAggregateScore.survey_instance_id == instance_id)
+    )).scalar_one_or_none()
+    if not agg:
+        raise HTTPException(status_code=404, detail="Church score not found. Run aggregation first.")
+    return agg
+
+
+@router.get("/church/{instance_id}")
+async def church_report(
+    instance_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "leader")),
+):
+    agg = await _church_agg_or_404(instance_id, db)
+    # Anonymity floor: below N_MIN respondents, withhold the entire breakdown
+    # (and the recommendations that derive from it) to prevent re-identification.
+    if is_below_floor(agg.respondent_count):
+        return suppressed_payload(agg.respondent_count)
+    return _church_report_data(agg)
+
+
+@router.get("/individual/by-token/{token}/export")
+async def export_individual_report(
+    token: str,
+    fmt: str = Query("html", pattern="^(html|pdf)$"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download a member's own report (HTML, or PDF if WeasyPrint is installed),
+    authorized solely by the capability token."""
+    score = await _score_for_token(token, db)
+    html = render_individual_html(_serialize_individual_score(score))
+    return _export_response(html, fmt, filename="bhis-report")
+
+
+@router.get("/church/{instance_id}/export")
+async def export_church_report(
+    instance_id: str,
+    fmt: str = Query("html", pattern="^(html|pdf)$"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("admin", "leader")),
+):
+    """Download the church report. Suppressed below the anonymity floor."""
+    agg = await _church_agg_or_404(instance_id, db)
+    if is_below_floor(agg.respondent_count):
+        raise HTTPException(status_code=409, detail="Report suppressed: below the anonymity threshold")
+    html = render_church_html(_church_report_data(agg))
+    return _export_response(html, fmt, filename="bhis-church-report")

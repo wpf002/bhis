@@ -13,3 +13,6 @@ redis==5.0.4
 httpx==0.27.0
 python-dotenv==1.0.1
 greenlet==3.0.3
+# Optional: enables PDF report export. Needs system libs (pango/cairo); without
+# it, /reports/.../export?fmt=pdf returns 501 and HTML export still works.
+# weasyprint==62.3
