@@ -201,18 +201,33 @@ export default function DashboardPage() {
 }
 
 function Header({ name, count, instanceId, onSignOut }: { name?: string; count: number; instanceId: string | null; onSignOut: () => void }) {
+  const churchName = name || 'Your Church'
   return (
     <header className="border-b border-line bg-surface/80 backdrop-blur sticky top-0 z-10">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
         <Logo />
-        <div className="flex items-center gap-4 text-sm">
-          <div className="text-right hidden sm:block">
-            <div className="text-ink">{name || 'Your Church'}</div>
-            <div className="text-xs text-ink-faint">{count} {count === 1 ? 'person' : 'people'} responded</div>
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* Church identity */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full bg-sage-soft text-sage-dark flex items-center justify-center font-serif text-base flex-shrink-0">
+              {churchName.charAt(0).toUpperCase()}
+            </div>
+            <div className="hidden sm:block leading-tight max-w-[200px]">
+              <div className="text-sm font-medium text-ink truncate">{churchName}</div>
+              <div className="text-xs text-ink-faint">{count} {count === 1 ? 'person' : 'people'} responded</div>
+            </div>
           </div>
-          <Link to="/admin" className="text-ink-soft hover:text-ink hidden sm:inline">Manage</Link>
-          {instanceId && <a href={reportApi.churchExportUrl(instanceId, 'html')} target="_blank" rel="noreferrer" className="btn-ghost">Export</a>}
-          <button onClick={onSignOut} className="text-ink-faint hover:text-ink-soft">Sign out</button>
+
+          <div className="hidden sm:block w-px h-8 bg-line" />
+
+          {/* Actions */}
+          <nav className="flex items-center gap-1">
+            <Link to="/admin" className="btn-ghost px-3 py-1.5 whitespace-nowrap">Manage</Link>
+            {instanceId && (
+              <a href={reportApi.churchExportUrl(instanceId, 'html')} target="_blank" rel="noreferrer" className="btn-ghost px-3 py-1.5">Export</a>
+            )}
+            <button onClick={onSignOut} className="text-sm text-ink-faint hover:text-ink-soft px-2.5 py-1.5 whitespace-nowrap">Sign out</button>
+          </nav>
         </div>
       </div>
     </header>
