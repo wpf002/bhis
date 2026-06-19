@@ -2,7 +2,7 @@
 ## Biblical Health Intelligence System
 
 **Last updated:** 2026-06-18
-**Current status:** Scaffold complete, pre-pilot
+**Current status:** Phases 0–2 complete (backend + frontend live, 164 backend tests); next = Phase 3 (pilot launch / deployment)
 **Target:** Paying pilot churches within 90 days of Phase 2 completion
 
 ---
@@ -38,8 +38,8 @@ This revision is grounded in a code audit of the actual scaffold. Key changes fr
 |---|---|---|---|
 | 0 | Foundation | ✅ Complete | Full project scaffold, scoring engine, 60 questions |
 | 1.5 | Concierge Validation | 1–2 weeks | 1–2 churches' real data validates questions + scoring + trust |
-| 1 | Backend Complete | 4 weeks | All API endpoints production-ready, tested, email-capable |
-| 2 | Frontend Complete | 4 weeks | Full survey + dashboard experience live |
+| 1 | Backend Complete | ✅ Complete | All API endpoints production-ready, tested (164 tests), email-capable |
+| 2 | Frontend Complete | ✅ Complete | Full survey + dashboard experience live, wired to backend |
 | 3 | Pilot Launch | 6 weeks | 5–10 churches actively using BHIS |
 | 4 | Pilot Iteration | 4 weeks | Feedback-driven refinement, second round pilots |
 | 5 | Public Launch | 4 weeks | Self-serve onboarding, billing, public access |
