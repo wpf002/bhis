@@ -180,7 +180,7 @@ export default function SurveyPage() {
 
       <div className="flex-1 flex items-center justify-center px-6 py-10">
         {currentQ && (
-          <div className="w-full max-w-2xl">
+          <div key={currentIndex} className="w-full max-w-2xl animate-fade-up">
             <div className="mb-6">
               <span className="text-[10px] text-white/30 uppercase tracking-widest" style={{ fontFamily: 'sans-serif' }}>{currentQ.pillar.replace(/_/g, ' ')}</span>
             </div>
@@ -235,10 +235,15 @@ export default function SurveyPage() {
             )}
 
             {currentQ.question_type === 'open_ended' && (
-              <textarea value={currentResponse?.text_response || ''} onChange={e => record({ text_response: e.target.value })}
-                placeholder="Write your honest answer here… (optional)" rows={5}
-                className="w-full bg-[#0F1117] border border-white/10 rounded-xl px-5 py-4 text-white/80 text-sm focus:outline-none focus:border-blue-500/40 resize-none leading-relaxed"
-                style={{ fontFamily: 'sans-serif' }} />
+              <div>
+                <textarea value={currentResponse?.text_response || ''} onChange={e => record({ text_response: e.target.value })}
+                  placeholder="Write your honest answer here… (optional)" rows={5}
+                  className="w-full bg-[#0F1117] border border-white/10 rounded-xl px-5 py-4 text-white/80 text-sm focus:outline-none focus:border-blue-500/40 resize-none leading-relaxed"
+                  style={{ fontFamily: 'sans-serif' }} />
+                <div className="text-right text-[11px] text-white/30 mt-1.5" style={{ fontFamily: 'sans-serif' }}>
+                  {(currentResponse?.text_response || '').length} characters
+                </div>
+              </div>
             )}
 
             {error && <div className="text-red-400 text-sm mt-4" style={{ fontFamily: 'sans-serif' }}>{error}</div>}

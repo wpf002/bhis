@@ -3,7 +3,34 @@ import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { reportApi } from '../services/api'
 import { PILLAR_LABELS, PILLAR_COLORS } from '../types'
+import type { Recommendation } from '../types'
 import clsx from 'clsx'
+
+function ExpandableRec({ r }: { r: Recommendation }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="bg-[#0F1117] rounded-2xl border border-white/8 p-6">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-start justify-between gap-3 text-left" aria-expanded={open}>
+        <div className="text-white/90 font-medium">{r.title}</div>
+        <div className="flex items-center gap-2 flex-shrink-0" style={{ fontFamily: 'sans-serif' }}>
+          <span className={clsx('text-[10px] px-2 py-0.5 rounded border font-bold', URGENCY_COLORS[r.urgency])}>{r.urgency}</span>
+          <span className="text-white/30 text-sm">{open ? '▾' : '▸'}</span>
+        </div>
+      </button>
+      <p className="text-sm text-white/50 leading-relaxed mt-3" style={{ fontFamily: 'sans-serif' }}>{r.diagnosis}</p>
+      {open && (
+        <div className="animate-fade-up mt-4">
+          <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-4 mb-4">
+            <div className="text-[10px] text-blue-400 uppercase tracking-widest mb-2" style={{ fontFamily: 'sans-serif' }}>Scripture Anchor</div>
+            <p className="text-xs text-white/60 italic" style={{ fontFamily: 'sans-serif' }}>{r.biblical_anchor}</p>
+          </div>
+          <p className="text-sm text-white/70 leading-relaxed" style={{ fontFamily: 'sans-serif' }}>{r.intervention}</p>
+          <div className="mt-3 text-[10px] text-amber-400 uppercase tracking-widest" style={{ fontFamily: 'sans-serif' }}>Timeline: {r.timeline}</div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const TIER_COLORS: Record<string, string> = {
   'Spiritually Disengaged': 'text-red-400',
@@ -82,7 +109,7 @@ export default function IndividualReportPage() {
         </div>
 
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 animate-fade-up">
           <div className="text-[10px] text-white/30 uppercase tracking-widest mb-4" style={{ fontFamily: 'sans-serif' }}>BHIS · Your Personal Assessment</div>
           <div className="text-5xl font-bold mb-2" style={{ fontFamily: 'sans-serif' }}>{report.composite_score}</div>
           <div className={clsx('text-xl mb-1', TIER_COLORS[report.maturity_tier])}>{report.maturity_tier}</div>
@@ -138,21 +165,7 @@ export default function IndividualReportPage() {
         {report.recommendations.length > 0 && (
           <div className="space-y-4 mb-8">
             <div className="text-[11px] text-white/60 uppercase tracking-widest" style={{ fontFamily: 'sans-serif' }}>Your Growth Areas</div>
-            {report.recommendations.map(r => (
-              <div key={r.priority} className="bg-[#0F1117] rounded-2xl border border-white/8 p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="text-white/90 font-medium">{r.title}</div>
-                  <span className={clsx('text-[10px] px-2 py-0.5 rounded border font-bold', URGENCY_COLORS[r.urgency])} style={{ fontFamily: 'sans-serif' }}>{r.urgency}</span>
-                </div>
-                <p className="text-sm text-white/50 leading-relaxed mb-4" style={{ fontFamily: 'sans-serif' }}>{r.diagnosis}</p>
-                <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-4 mb-4">
-                  <div className="text-[10px] text-blue-400 uppercase tracking-widest mb-2" style={{ fontFamily: 'sans-serif' }}>Scripture Anchor</div>
-                  <p className="text-xs text-white/60 italic" style={{ fontFamily: 'sans-serif' }}>{r.biblical_anchor}</p>
-                </div>
-                <p className="text-sm text-white/70 leading-relaxed" style={{ fontFamily: 'sans-serif' }}>{r.intervention}</p>
-                <div className="mt-3 text-[10px] text-amber-400 uppercase tracking-widest" style={{ fontFamily: 'sans-serif' }}>Timeline: {r.timeline}</div>
-              </div>
-            ))}
+            {report.recommendations.map(r => <ExpandableRec key={r.priority} r={r} />)}
           </div>
         )}
 

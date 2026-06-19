@@ -55,6 +55,24 @@ export default function DashboardPage() {
     )
   }
 
+  // Empty state — no scored responses yet (or below the anonymity floor).
+  if (!dashboard?.health_score) {
+    return (
+      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center px-6" style={{ fontFamily: 'sans-serif' }}>
+        <div className="text-center max-w-md">
+          <div className="text-lg text-white/80 mb-2" style={{ fontFamily: 'Georgia, serif' }}>No results yet</div>
+          <p className="text-sm text-white/40 mb-6">
+            Once enough of your congregation has completed the assessment, your church's health score and insights appear here.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link to="/admin" className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium">Launch a survey</Link>
+            <button onClick={clearAuth} className="text-xs text-white/30 hover:text-white/60">Sign out</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const pillarScores = dashboard?.pillar_scores || {}
   const pillarList = Object.entries(PILLAR_LABELS).map(([key, label]) => ({
     key,
@@ -161,6 +179,8 @@ export default function DashboardPage() {
           {TABS.map(t => (
             <button
               key={t}
+              role="tab"
+              aria-selected={tab === t}
               onClick={() => setTab(t)}
               className={clsx('px-4 py-2 rounded-lg text-sm transition-all', tab === t ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70')}
               style={{ fontFamily: 'sans-serif' }}
