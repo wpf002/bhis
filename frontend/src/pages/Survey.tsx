@@ -81,7 +81,19 @@ export default function SurveyPage() {
     startTime.current = Date.now()
   }
 
-  const canAdvance = currentQ && (currentQ.question_type === 'open_ended' || responses[currentQ.id] !== undefined)
+  const toggleRank = (letter: string) => {
+    if (!currentQ) return
+    const current = currentResponse?.ranking_order || []
+    const next = current.includes(letter) ? current.filter(l => l !== letter) : [...current, letter]
+    record({ ranking_order: next })
+  }
+
+  const canAdvance = currentQ && (
+    currentQ.question_type === 'open_ended' ||
+    (currentQ.question_type === 'forced_prioritization'
+      ? (currentResponse?.ranking_order?.length || 0) === currentQ.options.length
+      : responses[currentQ.id] !== undefined)
+  )
 
   const handleNext = () => {
     if (currentIndex < questions.length - 1) setCurrentIndex(i => i + 1)
@@ -199,6 +211,26 @@ export default function SurveyPage() {
                     <span className="leading-relaxed" style={{ fontFamily: 'sans-serif' }}>{opt.option_text}</span>
                   </button>
                 ))}
+              </div>
+            )}
+
+            {currentQ.question_type === 'forced_prioritization' && (
+              <div className="space-y-2">
+                <p className="text-xs text-white/40 mb-3" style={{ fontFamily: 'sans-serif' }}>Tap in order, from most to least important.</p>
+                {currentQ.options.map(opt => {
+                  const rank = (currentResponse?.ranking_order || []).indexOf(opt.option_letter)
+                  return (
+                    <button key={opt.id} onClick={() => toggleRank(opt.option_letter)}
+                      className={clsx('w-full flex items-center gap-4 px-5 py-4 rounded-xl border text-left transition-all',
+                        rank >= 0 ? 'bg-blue-600/20 border-blue-500/50 text-white' : 'bg-[#0F1117] border-white/8 text-white/60 hover:border-white/20 hover:text-white/80')}>
+                      <span className={clsx('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0',
+                        rank >= 0 ? 'bg-blue-500 text-white' : 'border border-white/20 text-white/30')} style={{ fontFamily: 'sans-serif' }}>
+                        {rank >= 0 ? rank + 1 : ''}
+                      </span>
+                      <span className="leading-relaxed" style={{ fontFamily: 'sans-serif' }}>{opt.option_text}</span>
+                    </button>
+                  )
+                })}
               </div>
             )}
 
