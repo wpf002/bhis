@@ -11,16 +11,21 @@ effectively points at named individuals.
 Rule: no church-facing aggregate breakdown renders below a minimum respondent
 count (``N_MIN``). See docs/anonymity-design.md.
 
+NOTE (2026-06-19): per product decision the floor is OFF — results render from
+the first response (``MIN_N_DEFAULT = 1``). The machinery is kept so a floor can
+be re-enabled later by raising this value; member-facing anonymity wording was
+softened accordingly.
+
 These are pure functions with no DB/HTTP dependencies so they can be unit-tested
 directly, matching the existing scoring-engine test style.
 """
 from typing import Any, Dict, Mapping, Optional
 
-# Default floor for 150–600-member churches (see anonymity design doc, decided 2026-06-18).
-MIN_N_DEFAULT = 15
+# Floor disabled: show results from the first response (raise to re-enable).
+MIN_N_DEFAULT = 1
 
-# Absolute floor: a church/instance setting may RAISE the threshold but never lower it past this.
-HARD_FLOOR = 10
+# Absolute floor a per-church override can't go below.
+HARD_FLOOR = 1
 
 # Fields that constitute a re-identifying breakdown and must be withheld below the floor.
 SUPPRESSED_FIELDS = (

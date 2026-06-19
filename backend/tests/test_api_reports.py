@@ -127,7 +127,9 @@ async def test_export_church_html(client, db):
     assert "Quietly Healthy" in resp.text
 
 
-async def test_export_church_suppressed_below_floor(client, db):
-    instance, admin = await _church_with_agg(db, count=9)
+async def test_export_church_works_at_low_count(client, db):
+    # Floor is off: export succeeds from the first response.
+    instance, admin = await _church_with_agg(db, count=3)
     resp = await client.get(f"{REP}/church/{instance.id}/export", headers=_auth(admin))
-    assert resp.status_code == 409
+    assert resp.status_code == 200
+    assert "Quietly Healthy" in resp.text

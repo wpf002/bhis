@@ -134,7 +134,7 @@ export default function IndividualReportPage() {
         )}
 
         <p className="text-center text-xs text-ink-faint">
-          Your answers are anonymous · This reflection is for your encouragement, not judgment
+          Your answers are kept private · This reflection is for your encouragement, not judgment
         </p>
       </div>
     </div>

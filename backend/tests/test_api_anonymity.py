@@ -164,19 +164,19 @@ async def _seed_aggregate(db, instance, count):
     await db.commit()
 
 
-async def test_church_report_suppressed_below_floor(client, db):
+async def test_church_report_renders_at_low_count(client, db):
+    # Floor is off (product decision): results render from the first response.
     instance = await _make_active_survey(db)
-    await _seed_aggregate(db, instance, count=9)
+    await _seed_aggregate(db, instance, count=3)
     admin = await _make_admin(db, church_id=instance.church_id)
     resp = await client.get(f"{REP}/church/{instance.id}", headers=_auth(admin))
     assert resp.status_code == 200
     body = resp.json()
-    assert body["suppressed"] is True
-    assert "pillar_scores" not in body
-    assert "health_score" not in body
+    assert body["suppressed"] is False
+    assert "pillar_scores" in body
 
 
-async def test_church_report_visible_at_floor(client, db):
+async def test_church_report_visible_at_higher_count(client, db):
     instance = await _make_active_survey(db)
     await _seed_aggregate(db, instance, count=20)
     admin = await _make_admin(db, church_id=instance.church_id)

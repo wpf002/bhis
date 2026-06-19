@@ -128,10 +128,10 @@ export default function SurveyPage() {
             {meta ? ` (${meta.question_count} questions)` : ''}.
           </p>
           <div className="card p-5 text-left mb-7">
-            <div className="text-sm font-semibold text-sage-dark mb-1">Your answers are completely anonymous</div>
+            <div className="text-sm font-semibold text-sage-dark mb-1">Your answers are private</div>
             <p className="text-sm text-ink-soft leading-relaxed">
-              Your church only ever sees combined results — never your individual answers, and there’s no way
-              to trace a response back to you. At the end, you’ll receive your own private reflection to keep.
+              Your church sees combined results, not your name attached to any answer. At the end, you’ll
+              receive your own private reflection to keep.
             </p>
           </div>
           {error && <div className="text-clay text-sm mb-4">{error}</div>}

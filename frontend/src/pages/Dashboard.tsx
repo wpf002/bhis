@@ -190,7 +190,7 @@ export default function DashboardPage() {
       )}
 
       <p className="text-center text-xs text-ink-faint mt-10">
-        Every response is anonymous · BHIS helps you shepherd, never surveil
+        Responses are kept private · BHIS helps you shepherd, never surveil
       </p>
     </div>
   )
@@ -255,16 +255,15 @@ function SurveyStatusPanel({ survey }: { survey: ActiveSurvey | null }) {
     return (
       <EmptyState
         title="This survey has closed"
-        message={`${survey.response_count} ${survey.response_count === 1 ? 'person' : 'people'} responded — fewer than the ${survey.responses_needed} needed to show results while keeping every answer anonymous.`}
+        message="No one responded before it closed. Start a new one whenever you’re ready."
         action={<Link to="/admin" className="btn-primary">Start a new survey</Link>}
       />
     )
   }
 
-  // Active and collecting
+  // Active — results appear from the first response, so this shows only until
+  // someone responds.
   const link = `${window.location.origin}/survey/${survey.id}`
-  const remaining = Math.max(0, survey.responses_needed - survey.response_count)
-  const pct = Math.min(100, Math.round((survey.response_count / survey.responses_needed) * 100))
   const copy = async () => {
     try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* noop */ }
   }
@@ -272,23 +271,12 @@ function SurveyStatusPanel({ survey }: { survey: ActiveSurvey | null }) {
   return (
     <div className="card p-8 max-w-2xl mx-auto text-center">
       <div className="inline-flex items-center gap-2 rounded-full bg-sage-soft border border-sage/25 px-3 py-1 text-xs font-medium text-sage-dark mb-4">
-        <span className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" /> Live · collecting responses
+        <span className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" /> Live
       </div>
       <h2 className="text-2xl text-ink mb-2">Your assessment is live</h2>
       <p className="text-ink-soft text-sm max-w-md mx-auto mb-6">
-        {remaining > 0
-          ? `${survey.response_count} of ${survey.responses_needed} people have responded. Results unlock once at least ${survey.responses_needed} have reflected — enough to keep every answer anonymous.`
-          : 'Enough people have responded — your results are being prepared. Refresh in a moment.'}
+        Share the link below with your congregation. Your church’s results will appear here as people respond.
       </p>
-
-      <div className="max-w-sm mx-auto mb-7">
-        <div className="h-2.5 bg-warmth rounded-full overflow-hidden">
-          <div className="h-full bg-sage rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
-        </div>
-        <div className="text-xs text-ink-faint mt-2">
-          {survey.response_count} responded{remaining > 0 ? ` · ${remaining} more to unlock results` : ''}
-        </div>
-      </div>
 
       <div className="text-left max-w-md mx-auto">
         <label className="label">Share this link with your congregation (no login needed)</label>

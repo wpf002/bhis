@@ -1,5 +1,9 @@
 """
-Tests for the anonymity minimum-N suppression floor.
+Tests for the minimum-N suppression mechanism.
+
+NOTE: the floor is OFF by default (MIN_N_DEFAULT = 1) per the 2026-06-19 product
+decision — results render from the first response. The suppression *mechanism*
+is still exercised here with an explicit min_n so a floor can be re-enabled later.
 Run: pytest tests/ -v
 """
 from app.services.privacy import (
@@ -21,7 +25,19 @@ SAMPLE_AGG = {
     "drift_risk_score": -2.0,
 }
 
-# ── resolve_min_n ─────────────────────────────────────────────────────────────
+# ── default: floor is off ─────────────────────────────────────────────────────
+
+def test_floor_is_disabled_by_default():
+    assert MIN_N_DEFAULT == 1
+    # With the floor off, any real aggregate (>=1 respondent) renders.
+    assert is_below_floor(1) is False
+    assert is_below_floor(2) is False
+    assert is_below_floor(40) is False
+    # Only an empty (0 / None) aggregate is withheld.
+    assert is_below_floor(0) is True
+    assert is_below_floor(None) is True
+
+# ── resolve_min_n (a per-church override can re-enable a floor) ────────────────
 
 def test_resolve_min_n_default():
     assert resolve_min_n() == MIN_N_DEFAULT
@@ -30,30 +46,14 @@ def test_resolve_min_n_default():
 def test_resolve_min_n_override_raises_threshold():
     assert resolve_min_n(25) == 25
 
-def test_resolve_min_n_override_clamped_to_hard_floor():
-    # A configured value below the hard floor cannot weaken anonymity.
-    assert resolve_min_n(3) == HARD_FLOOR
-    assert resolve_min_n(HARD_FLOOR - 1) == HARD_FLOOR
+def test_resolve_min_n_clamped_to_hard_floor():
+    assert resolve_min_n(0) == HARD_FLOOR
+    assert resolve_min_n(HARD_FLOOR) == HARD_FLOOR
 
 def test_hard_floor_not_above_default():
     assert HARD_FLOOR <= MIN_N_DEFAULT
 
-# ── is_below_floor ────────────────────────────────────────────────────────────
-
-def test_is_below_floor_true_when_under():
-    assert is_below_floor(14) is True
-
-def test_is_below_floor_false_at_threshold():
-    assert is_below_floor(MIN_N_DEFAULT) is False
-
-def test_is_below_floor_false_when_over():
-    assert is_below_floor(40) is False
-
-def test_is_below_floor_handles_none_as_zero():
-    assert is_below_floor(None) is True
-
-def test_is_below_floor_zero():
-    assert is_below_floor(0) is True
+# ── is_below_floor with an explicit floor (mechanism still works) ─────────────
 
 def test_is_below_floor_respects_custom_min_n():
     assert is_below_floor(18, min_n=20) is True
@@ -62,48 +62,38 @@ def test_is_below_floor_respects_custom_min_n():
 # ── suppressed_payload ────────────────────────────────────────────────────────
 
 def test_suppressed_payload_shape():
-    p = suppressed_payload(7)
+    p = suppressed_payload(7, min_n=20)
     assert p["suppressed"] is True
     assert p["reason"] == SUPPRESSION_REASON
     assert p["respondent_count"] == 7
-    assert p["min_n"] == MIN_N_DEFAULT
-    assert "15" in p["message"]
+    assert p["min_n"] == 20
+    assert "20" in p["message"]
 
 def test_suppressed_payload_leaks_no_breakdown_fields():
-    p = suppressed_payload(7)
+    p = suppressed_payload(7, min_n=20)
     for leaked in ("health_score", "archetype", "pillar_scores", "maturity_distribution"):
         assert leaked not in p
 
 def test_suppressed_payload_none_count():
     assert suppressed_payload(None)["respondent_count"] == 0
 
-# ── apply_min_n_floor ─────────────────────────────────────────────────────────
+# ── apply_min_n_floor (with an explicit floor) ────────────────────────────────
 
-def test_apply_floor_suppresses_below_threshold():
-    out = apply_min_n_floor(SAMPLE_AGG, respondent_count=9)
+def test_apply_floor_suppresses_below_explicit_threshold():
+    out = apply_min_n_floor(SAMPLE_AGG, respondent_count=9, min_n=20)
     assert out["suppressed"] is True
     assert "pillar_scores" not in out
     assert "health_score" not in out
 
-def test_apply_floor_passes_through_at_threshold():
-    out = apply_min_n_floor(SAMPLE_AGG, respondent_count=MIN_N_DEFAULT)
+def test_apply_floor_passes_through_by_default():
+    # Default floor is off, so a 2-respondent aggregate renders.
+    out = apply_min_n_floor(SAMPLE_AGG, respondent_count=2)
     assert out["suppressed"] is False
     assert out["health_score"] == 72.5
     assert out["pillar_scores"]["doctrinal_integrity"] == 80.0
-    assert out["respondent_count"] == MIN_N_DEFAULT
-    assert out["min_n"] == MIN_N_DEFAULT
-
-def test_apply_floor_passes_through_above_threshold():
-    out = apply_min_n_floor(SAMPLE_AGG, respondent_count=120)
-    assert out["suppressed"] is False
-    assert out["archetype"] == "Quietly Healthy"
 
 def test_apply_floor_does_not_mutate_input():
     before = dict(SAMPLE_AGG)
     apply_min_n_floor(SAMPLE_AGG, respondent_count=50)
     assert SAMPLE_AGG == before
     assert "suppressed" not in SAMPLE_AGG
-
-def test_apply_floor_custom_min_n():
-    out = apply_min_n_floor(SAMPLE_AGG, respondent_count=18, min_n=20)
-    assert out["suppressed"] is True
