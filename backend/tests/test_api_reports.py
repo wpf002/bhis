@@ -11,7 +11,8 @@ from app.models import (
 )
 from app.services.reports import render_individual_html, render_church_html, weasyprint_available
 
-pytestmark = pytest.mark.asyncio
+# Note: no module-level asyncio mark — this file mixes sync (pure render) and
+# async (API) tests; asyncio_mode=auto runs the async ones without a mark.
 
 REP = "/api/v1/reports"
 

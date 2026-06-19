@@ -1,7 +1,16 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import time
 
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
 from app.routers import auth, churches, surveys, responses, scoring, reports, recommendations
+from app.core.errors import register_error_handlers
+from app.core.observability import init_sentry, RequestLogMiddleware, START_TIME
+
+init_sentry()
 
 app = FastAPI(
     title="BHIS — Biblical Health Intelligence System",
@@ -9,6 +18,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.add_middleware(RequestLogMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
@@ -16,6 +26,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+register_error_handlers(app)
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(churches.router, prefix="/api/v1/churches", tags=["Churches"])
@@ -32,5 +44,14 @@ async def root():
 
 
 @app.get("/health")
-async def health():
-    return {"status": "healthy"}
+async def health(db: AsyncSession = Depends(get_db)):
+    db_ok = True
+    try:
+        await db.execute(text("SELECT 1"))
+    except Exception:
+        db_ok = False
+    return {
+        "status": "healthy" if db_ok else "degraded",
+        "db": db_ok,
+        "uptime_seconds": int(time.time() - START_TIME),
+    }

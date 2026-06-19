@@ -16,3 +16,5 @@ greenlet==3.0.3
 # Optional: enables PDF report export. Needs system libs (pango/cairo); without
 # it, /reports/.../export?fmt=pdf returns 501 and HTML export still works.
 # weasyprint==62.3
+# Optional: error tracking. Enabled only when SENTRY_DSN is set.
+# sentry-sdk==2.7.1

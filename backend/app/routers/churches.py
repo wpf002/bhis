@@ -60,6 +60,10 @@ async def create_church(
 ):
     church = Church(**payload.model_dump())
     db.add(church)
+    await db.flush()
+    # Onboarding: link the creating admin/leader to their new church if unassigned.
+    if current_user.church_id is None:
+        current_user.church_id = church.id
     await db.commit()
     await db.refresh(church)
     return church

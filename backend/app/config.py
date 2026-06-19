@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     # A completed survey faster than this is flagged as a likely bot/low-effort.
     MIN_COMPLETION_SECONDS: int = 120
 
+    # Observability
+    SENTRY_DSN: str = ""              # empty → Sentry disabled
+    SLOW_REQUEST_MS: int = 2000       # requests slower than this are logged as warnings
+
     class Config:
         env_file = ".env"
 
