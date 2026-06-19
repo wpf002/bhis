@@ -122,3 +122,18 @@ async def test_only_token_hash_is_stored(client, db):
     assert len(rows) == 1
     assert rows[0].token_hash != token
     assert len(rows[0].token_hash) == 64
+
+
+async def test_me_returns_current_user(client, db):
+    await _register(client, email="me@test.org")
+    login = (await client.post(f"{A}/login", json={"email": "me@test.org", "password": "secret12"})).json()
+    resp = await client.get(f"{A}/me", headers={"Authorization": f"Bearer {login['access_token']}"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["email"] == "me@test.org"
+    assert body["role"] == "admin"
+    assert "church_id" in body
+
+
+async def test_me_requires_auth(client, db):
+    assert (await client.get(f"{A}/me")).status_code in (401, 403)

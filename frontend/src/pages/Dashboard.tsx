@@ -1,17 +1,15 @@
 import { useState } from 'react'
+import { Link, Navigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
-  LineChart, Line, CartesianGrid,
 } from 'recharts'
-import { churchApi } from '../services/api'
+import { churchApi, reportApi } from '../services/api'
 import { useAuthStore } from '../hooks/useAuth'
 import { PILLAR_LABELS, PILLAR_COLORS } from '../types'
+import type { ChurchReport, SuppressedReport } from '../types'
 import clsx from 'clsx'
-
-// Hardcoded church_id for MVP — replace with dynamic lookup from user profile
-const CHURCH_ID = 'YOUR_CHURCH_ID'
 
 const TABS = ['Overview', 'Pillars', 'Congregation', 'Actions'] as const
 type Tab = typeof TABS[number]
@@ -31,12 +29,23 @@ const urgencyConfig: Record<string, string> = {
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>('Overview')
-  const { clearAuth } = useAuthStore()
+  const { clearAuth, churchId } = useAuthStore()
 
   const { data: dashboard, isLoading } = useQuery({
-    queryKey: ['dashboard', CHURCH_ID],
-    queryFn: () => churchApi.getDashboard(CHURCH_ID),
+    queryKey: ['dashboard', churchId],
+    queryFn: () => churchApi.getDashboard(churchId!),
+    enabled: !!churchId,
   })
+
+  const instanceId = dashboard?.survey_instance_id || null
+
+  const { data: report } = useQuery({
+    queryKey: ['churchReport', instanceId],
+    queryFn: () => reportApi.church(instanceId!),
+    enabled: !!instanceId && tab === 'Actions',
+  })
+
+  if (!churchId) return <Navigate to="/onboarding" replace />
 
   if (isLoading) {
     return (
@@ -80,18 +89,17 @@ export default function DashboardPage() {
               <div className="text-[10px] text-white/40 tracking-widest uppercase" style={{ fontFamily: 'sans-serif' }}>Biblical Health Intelligence</div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4" style={{ fontFamily: 'sans-serif' }}>
             <div className="text-right">
-              <div className="text-sm text-white/80" style={{ fontFamily: 'sans-serif' }}>{dashboard?.church?.name || 'Your Church'}</div>
-              <div className="text-xs text-white/40" style={{ fontFamily: 'sans-serif' }}>{dashboard?.respondent_count || 0} Respondents</div>
+              <div className="text-sm text-white/80">{dashboard?.church?.name || 'Your Church'}</div>
+              <div className="text-xs text-white/40">{dashboard?.respondent_count || 0} Respondents</div>
             </div>
-            <button
-              onClick={clearAuth}
-              className="text-xs text-white/30 hover:text-white/60 transition-colors"
-              style={{ fontFamily: 'sans-serif' }}
-            >
-              Sign out
-            </button>
+            <Link to="/admin" className="text-xs text-white/40 hover:text-white/70 transition-colors">Manage surveys</Link>
+            {instanceId && (
+              <a href={reportApi.churchExportUrl(instanceId, 'html')} target="_blank" rel="noreferrer"
+                className="text-xs text-white/40 hover:text-white/70 border border-white/10 rounded-lg px-2.5 py-1">Export</a>
+            )}
+            <button onClick={clearAuth} className="text-xs text-white/30 hover:text-white/60 transition-colors">Sign out</button>
           </div>
         </div>
       </div>
@@ -256,16 +264,9 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Actions — placeholder, wired to recommendations endpoint */}
+        {/* Actions — live recommendations from the church report */}
         {tab === 'Actions' && (
-          <div className="bg-[#0F1117] rounded-2xl border border-white/8 p-8 text-center">
-            <div className="text-white/40 text-sm" style={{ fontFamily: 'sans-serif' }}>
-              Run the church aggregation endpoint to populate recommendations.
-            </div>
-            <div className="text-white/20 text-xs mt-2" style={{ fontFamily: 'sans-serif' }}>
-              POST /api/v1/scoring/church/{'{'}{'{instanceId}'}{'}'} → GET /api/v1/reports/church/{'{'}{'{instanceId}'}{'}'} 
-            </div>
-          </div>
+          <ActionsTab report={report} />
         )}
       </div>
 
@@ -274,6 +275,48 @@ export default function DashboardPage() {
           BHIS · All responses anonymous · Data secured and encrypted
         </div>
       </div>
+    </div>
+  )
+}
+
+function ActionsTab({ report }: { report?: ChurchReport | SuppressedReport }) {
+  if (!report) {
+    return (
+      <div className="bg-[#0F1117] rounded-2xl border border-white/8 p-8 text-center">
+        <div className="text-white/40 text-sm" style={{ fontFamily: 'sans-serif' }}>Recommendations appear once your church has scored responses.</div>
+      </div>
+    )
+  }
+  if ('suppressed' in report && report.suppressed) {
+    return (
+      <div className="bg-[#0F1117] rounded-2xl border border-white/8 p-8 text-center">
+        <div className="text-white/50 text-sm" style={{ fontFamily: 'sans-serif' }}>{report.message}</div>
+      </div>
+    )
+  }
+  const recs = report.recommendations || []
+  return (
+    <div className="space-y-4">
+      {recs.length === 0 && (
+        <div className="bg-[#0F1117] rounded-2xl border border-white/8 p-8 text-center">
+          <div className="text-white/40 text-sm" style={{ fontFamily: 'sans-serif' }}>No priority actions flagged — a healthy sign.</div>
+        </div>
+      )}
+      {recs.map(r => (
+        <div key={r.priority} className="bg-[#0F1117] rounded-2xl border border-white/8 p-6" style={{ fontFamily: 'sans-serif' }}>
+          <div className="flex items-start justify-between mb-3">
+            <div className="text-white/90 font-medium" style={{ fontFamily: 'Georgia, serif' }}>{r.title}</div>
+            <span className={clsx('text-[10px] px-2 py-0.5 rounded border font-bold', urgencyConfig[r.urgency])}>{r.urgency}</span>
+          </div>
+          <p className="text-sm text-white/50 leading-relaxed mb-4">{r.diagnosis}</p>
+          <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-4 mb-3">
+            <div className="text-[10px] text-blue-400 uppercase tracking-widest mb-2">Scripture Anchor</div>
+            <p className="text-xs text-white/60 italic">{r.biblical_anchor}</p>
+          </div>
+          <p className="text-sm text-white/70 leading-relaxed">{r.intervention}</p>
+          <div className="mt-3 text-[10px] text-amber-400 uppercase tracking-widest">Timeline: {r.timeline}</div>
+        </div>
+      ))}
     </div>
   )
 }

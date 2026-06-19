@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { reportApi } from '../services/api'
@@ -26,23 +27,40 @@ const URGENCY_COLORS: Record<string, string> = {
 }
 
 export default function IndividualReportPage() {
-  const { sessionId } = useParams<{ sessionId: string }>()
+  const { token } = useParams<{ token: string }>()
+  const [emailSent, setEmailSent] = useState(false)
 
-  const { data: report, isLoading } = useQuery({
-    queryKey: ['individualReport', sessionId],
-    queryFn: () => reportApi.individual(sessionId!),
-    enabled: !!sessionId,
+  const { data: report, isLoading, isError } = useQuery({
+    queryKey: ['individualReport', token],
+    queryFn: () => reportApi.individualByToken(token!),
+    enabled: !!token,
+    retry: 1,
   })
+
+  const emailReport = async () => {
+    if (!token) return
+    const email = window.prompt('Email your private report link to yourself:')
+    if (!email) return
+    try { await reportApi.deliver(token, email); setEmailSent(true) } catch { /* noop */ }
+  }
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center">
-        <div className="text-white/40 text-sm" style={{ fontFamily: 'sans-serif' }}>Preparing your report...</div>
+        <div className="text-white/40 text-sm" style={{ fontFamily: 'sans-serif' }}>Preparing your report…</div>
       </div>
     )
   }
 
-  if (!report) return null
+  if (isError || !report) {
+    return (
+      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center px-6">
+        <div className="text-center text-white/40 text-sm" style={{ fontFamily: 'sans-serif' }}>
+          We couldn't find this report. Your report link may have expired, or scoring may still be in progress.
+        </div>
+      </div>
+    )
+  }
 
   const pillarList = Object.entries(PILLAR_LABELS).map(([key, label]) => ({
     key, label,
@@ -54,6 +72,15 @@ export default function IndividualReportPage() {
   return (
     <div className="min-h-screen bg-[#0A0C10] text-white py-12 px-6" style={{ fontFamily: 'Georgia, serif' }}>
       <div className="max-w-2xl mx-auto">
+        {/* Actions */}
+        <div className="flex justify-end gap-3 mb-6" style={{ fontFamily: 'sans-serif' }}>
+          <a href={reportApi.individualExportUrl(token!, 'html')} target="_blank" rel="noreferrer"
+            className="text-xs text-white/50 hover:text-white/80 border border-white/10 rounded-lg px-3 py-1.5">Print / Save</a>
+          <button onClick={emailReport} className="text-xs text-white/50 hover:text-white/80 border border-white/10 rounded-lg px-3 py-1.5">
+            {emailSent ? 'Sent ✓' : 'Email me this'}
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-10">
           <div className="text-[10px] text-white/30 uppercase tracking-widest mb-4" style={{ fontFamily: 'sans-serif' }}>BHIS · Your Personal Assessment</div>
@@ -65,7 +92,8 @@ export default function IndividualReportPage() {
             <div className="mt-4 mx-auto max-w-sm p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-left">
               <div className="text-xs text-amber-400 font-medium mb-1" style={{ fontFamily: 'sans-serif' }}>Consistency Note</div>
               <p className="text-xs text-white/50 leading-relaxed" style={{ fontFamily: 'sans-serif' }}>
-                Some responses show a gap between how you see yourself and how your life actually looks. This isn't unusual — most of us have blind spots. Use this as an invitation to ask someone you trust: "Does my life look like what I think it does?"
+                Some responses show a gap between how you see yourself and how your life actually looks. This isn't unusual —
+                most of us have blind spots. Use this as an invitation to ask someone you trust: "Does my life look like what I think it does?"
               </p>
             </div>
           )}
@@ -96,18 +124,13 @@ export default function IndividualReportPage() {
         </div>
 
         {/* Drift */}
-        <div className={clsx(
-          'rounded-2xl border p-4 mb-6 flex items-center justify-between',
-          report.drift_risk_level === 'low' ? 'bg-emerald-500/8 border-emerald-500/20' : 'bg-amber-500/8 border-amber-500/20'
-        )}>
+        <div className={clsx('rounded-2xl border p-4 mb-6 flex items-center justify-between',
+          report.drift_risk_level === 'low' ? 'bg-emerald-500/8 border-emerald-500/20' : 'bg-amber-500/8 border-amber-500/20')}>
           <div>
             <div className="text-[10px] text-white/40 uppercase tracking-widest mb-0.5" style={{ fontFamily: 'sans-serif' }}>Drift Risk</div>
             <div className={clsx('text-lg font-semibold', report.drift_risk_level === 'low' ? 'text-emerald-400' : 'text-amber-400')} style={{ fontFamily: 'sans-serif' }}>
               {report.drift_risk_level.toUpperCase()}
             </div>
-          </div>
-          <div className="text-xs text-white/30" style={{ fontFamily: 'sans-serif' }}>
-            {report.drift_signal_count} signal{report.drift_signal_count !== 1 ? 's' : ''} detected
           </div>
         </div>
 

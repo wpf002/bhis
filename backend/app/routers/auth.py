@@ -315,6 +315,13 @@ async def revoke_all_sessions(
 
 
 @router.get("/me")
-async def me(db: AsyncSession = Depends(get_db), token: str = ""):
-    # Lightweight me endpoint — auth handled via dependency in real requests
-    return {"status": "authenticated"}
+async def me(current_user: User = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "role": current_user.role,
+        "church_id": current_user.church_id,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "email_verified": current_user.email_verified,
+    }

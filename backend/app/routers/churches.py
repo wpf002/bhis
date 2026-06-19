@@ -161,6 +161,7 @@ async def get_dashboard(
 
     return {
         "church": church,
+        "survey_instance_id": agg.survey_instance_id,
         "health_score": agg.health_score,
         "archetype": agg.archetype,
         "drift_risk_level": agg.drift_risk_level,

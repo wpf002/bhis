@@ -44,6 +44,7 @@ export interface Church {
 
 export interface ChurchDashboard {
   church: Church
+  survey_instance_id?: string | null
   health_score: number | null
   archetype: string | null
   drift_risk_level: 'low' | 'moderate' | 'high' | 'critical' | null
@@ -141,6 +142,59 @@ export interface ChurchReport {
   maturity_distribution: Record<string, number>
   pillar_scores: Record<string, number>
   recommendations: Recommendation[]
+  suppressed?: false
+}
+
+/** Returned by the church report/dashboard when below the N_MIN anonymity floor. */
+export interface SuppressedReport {
+  suppressed: true
+  reason: string
+  respondent_count: number
+  min_n: number
+  message: string
+}
+
+// ── Sessions / invites / instance metadata (new in Phase 1/2) ──────────────────
+
+export interface SessionStartResponse {
+  id: string
+  survey_instance_id: string
+  started_at: string
+  is_complete: boolean
+  /** Capability token: held by the member, authorizes submit/complete + report. */
+  anonymous_token: string
+}
+
+export interface InstanceMeta {
+  id: string
+  status: SurveyInstance['status']
+  question_count: number
+  estimated_minutes: number | null
+  respondent_count: number
+  close_date: string | null
+}
+
+export interface InviteResponse {
+  token: string
+  join_url: string
+  role: string
+  expires_at: string
+}
+
+export interface ActiveSession {
+  id: string
+  created_at: string
+  expires_at: string
+}
+
+export interface CurrentUser {
+  id: string
+  email: string
+  role: string
+  church_id: string | null
+  first_name: string
+  last_name: string
+  email_verified: boolean
 }
 
 export interface Recommendation {

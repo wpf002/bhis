@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { churchApi } from '../services/api'
+import { useAuthStore } from '../hooks/useAuth'
 
 const SIZE_OPTIONS = ['Under 100', '100–250', '250–500', '500–1000', '1000+']
 const PROFILE_OPTIONS = ['Evangelical', 'Reformed', 'Baptist', 'Non-denominational', 'Charismatic', 'Anglican', 'Methodist', 'Lutheran', 'Other']
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
+  const { setChurchId } = useAuthStore()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     name: '',
@@ -21,7 +23,7 @@ export default function OnboardingPage() {
   const mutation = useMutation({
     mutationFn: () => churchApi.create(form),
     onSuccess: (data) => {
-      localStorage.setItem('church_id', data.id)
+      setChurchId(data.id)
       navigate('/admin')
     },
   })
