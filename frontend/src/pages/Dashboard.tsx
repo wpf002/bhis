@@ -29,6 +29,7 @@ const urgencyConfig: Record<string, string> = {
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>('Overview')
+  const [selectedPillar, setSelectedPillar] = useState<string | null>(null)
   const { clearAuth, churchId } = useAuthStore()
 
   const { data: dashboard, isLoading } = useQuery({
@@ -42,7 +43,7 @@ export default function DashboardPage() {
   const { data: report } = useQuery({
     queryKey: ['churchReport', instanceId],
     queryFn: () => reportApi.church(instanceId!),
-    enabled: !!instanceId && tab === 'Actions',
+    enabled: !!instanceId && (tab === 'Actions' || !!selectedPillar),
   })
 
   if (!churchId) return <Navigate to="/onboarding" replace />
@@ -229,7 +230,9 @@ export default function DashboardPage() {
             {pillarList.map(p => {
               const cfg = statusConfig[p.status as keyof typeof statusConfig]
               return (
-                <div key={p.key} className="bg-[#0F1117] rounded-2xl border border-white/8 p-5">
+                <button key={p.key} onClick={() => setSelectedPillar(p.key)}
+                  aria-label={`View ${p.label} detail`}
+                  className="w-full text-left bg-[#0F1117] rounded-2xl border border-white/8 p-5 hover:border-white/20 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
@@ -237,6 +240,7 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-3">
                           <span className={clsx('text-[10px] px-2 py-0.5 rounded border font-semibold', cfg.bg, cfg.text, cfg.border)} style={{ fontFamily: 'sans-serif' }}>{cfg.label}</span>
                           <span className="text-xl font-bold" style={{ fontFamily: 'sans-serif', color: p.color }}>{Math.round(p.score)}</span>
+                          <span className="text-white/25 text-sm">›</span>
                         </div>
                       </div>
                       <div className="h-2 bg-white/6 rounded-full overflow-hidden">
@@ -244,7 +248,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -289,6 +293,14 @@ export default function DashboardPage() {
           <ActionsTab report={report} />
         )}
       </div>
+
+      {selectedPillar && (
+        <PillarModal
+          pillar={pillarList.find(p => p.key === selectedPillar)!}
+          report={report}
+          onClose={() => setSelectedPillar(null)}
+        />
+      )}
 
       <div className="max-w-7xl mx-auto px-6 py-6 mt-4">
         <div className="text-center text-xs text-white/20" style={{ fontFamily: 'sans-serif' }}>
@@ -337,6 +349,55 @@ function ActionsTab({ report }: { report?: ChurchReport | SuppressedReport }) {
           <div className="mt-3 text-[10px] text-amber-400 uppercase tracking-widest">Timeline: {r.timeline}</div>
         </div>
       ))}
+    </div>
+  )
+}
+
+const STATUS_MEANING: Record<string, string> = {
+  strength: 'A clear strength — this dimension is healthy across your congregation. Keep reinforcing it.',
+  moderate: 'Moderate. There is real foundation here, with room to deepen through focused teaching and practice.',
+  gap: 'A gap. This dimension is lagging and would benefit from intentional attention this season.',
+  significant_gap: 'A significant gap. This is one of the most important areas to address — see the recommendations below.',
+}
+
+type PillarRow = { key: string; label: string; score: number; color: string; status: string }
+
+function PillarModal({ pillar, report, onClose }: {
+  pillar: PillarRow
+  report?: ChurchReport | SuppressedReport
+  onClose: () => void
+}) {
+  const recs = report && !('suppressed' in report && report.suppressed)
+    ? (report as ChurchReport).recommendations.filter(r => r.pillar === pillar.key)
+    : []
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4" role="dialog" aria-modal="true"
+      aria-label={`${pillar.label} detail`} onClick={onClose}>
+      <div className="bg-[#0F1117] border border-white/10 rounded-2xl p-6 max-w-md w-full" style={{ fontFamily: 'sans-serif' }} onClick={e => e.stopPropagation()}>
+        <div className="flex items-start justify-between mb-4">
+          <div style={{ fontFamily: 'Georgia, serif' }} className="text-white/90 text-lg">{pillar.label}</div>
+          <button onClick={onClose} aria-label="Close" className="text-white/40 hover:text-white/80 text-lg leading-none">×</button>
+        </div>
+        <div className="flex items-end gap-2 mb-4">
+          <span className="text-4xl font-bold" style={{ color: pillar.color }}>{Math.round(pillar.score)}</span>
+          <span className="text-white/30 text-sm mb-1">/100</span>
+        </div>
+        <div className="h-2 bg-white/6 rounded-full overflow-hidden mb-4">
+          <div className="h-full rounded-full" style={{ width: `${pillar.score}%`, background: pillar.color, opacity: 0.8 }} />
+        </div>
+        <p className="text-sm text-white/60 leading-relaxed mb-4">{STATUS_MEANING[pillar.status] || ''}</p>
+        {recs.length > 0 && (
+          <div className="border-t border-white/8 pt-4">
+            <div className="text-[10px] text-white/40 uppercase tracking-widest mb-2">Recommended focus</div>
+            {recs.map(r => (
+              <div key={r.priority} className="mb-3">
+                <div className="text-sm text-white/80" style={{ fontFamily: 'Georgia, serif' }}>{r.title}</div>
+                <p className="text-xs text-white/50 leading-relaxed mt-1">{r.intervention}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
