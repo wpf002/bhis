@@ -25,7 +25,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthShell subtitle="Choose a new password">
+    <AuthShell title="Choose a new password" subtitle="Almost there">
       {token ? (
         <form onSubmit={submit} className="space-y-5">
           <Field label="New password" type="password" value={password} onChange={setPassword} placeholder="At least 8 characters" required autoFocus />
@@ -33,10 +33,10 @@ export default function ResetPasswordPage() {
           <SubmitButton loading={loading} label="Reset password" />
         </form>
       ) : (
-        <p className="text-red-400 text-sm text-center" style={{ fontFamily: 'sans-serif' }}>Missing reset token.</p>
+        <p className="text-clay text-sm text-center">This reset link is missing its token.</p>
       )}
-      <p className="text-center text-xs text-white/30 mt-6" style={{ fontFamily: 'sans-serif' }}>
-        <Link to="/login" className="text-blue-400 hover:text-blue-300">Back to sign in</Link>
+      <p className="text-center text-sm text-ink-soft mt-6">
+        <Link to="/login" className="text-sage font-medium hover:text-sage-dark">Back to sign in</Link>
       </p>
     </AuthShell>
   )

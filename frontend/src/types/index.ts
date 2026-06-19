@@ -220,20 +220,21 @@ export const PILLAR_LABELS: Record<string, string> = {
   drift_vulnerability: 'Drift & Vulnerability',
 }
 
+// Warm, harmonious palette (sage / gold / clay / muted earth tones).
 export const PILLAR_COLORS: Record<string, string> = {
-  doctrinal_integrity: '#4B7BEC',
-  spiritual_discipline: '#A55EEA',
-  transformation_fruit: '#26DE81',
-  discipleship_depth: '#FD9644',
-  church_health_trust: '#2BCBBA',
-  engagement_alignment: '#FC5C65',
-  drift_vulnerability: '#F7B731',
+  doctrinal_integrity: '#4F7355',  // sage
+  spiritual_discipline: '#C39A4A', // gold
+  transformation_fruit: '#BE6E47', // clay
+  discipleship_depth: '#5E8B86',   // muted teal
+  church_health_trust: '#6E86A8',  // dusty blue
+  engagement_alignment: '#9A8C4E', // olive
+  drift_vulnerability: '#A8754E',  // warm brown
 }
 
 export const MATURITY_TIER_COLORS: Record<MaturityTier, string> = {
-  'Spiritually Disengaged': '#FC5C65',
-  'Nominal': '#FD9644',
-  'Growing': '#F7B731',
-  'Grounded': '#26DE81',
-  'Multiplying Disciple': '#4B7BEC',
+  'Spiritually Disengaged': '#BE6E47', // clay
+  'Nominal': '#C99A5B',                // tan
+  'Growing': '#C39A4A',                // gold
+  'Grounded': '#5E8560',               // green
+  'Multiplying Disciple': '#4F7355',   // deep sage
 }

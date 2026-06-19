@@ -2,55 +2,40 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { reportApi } from '../services/api'
-import { PILLAR_LABELS, PILLAR_COLORS } from '../types'
+import { PILLAR_LABELS } from '../types'
 import type { Recommendation } from '../types'
+import { Logo, ScoreRing, STATUS_TONE } from '../components/ui'
 import clsx from 'clsx'
+
+const TIER_NOTE: Record<string, string> = {
+  'Spiritually Disengaged': 'There’s a tender invitation here — small, faithful steps make a real difference.',
+  'Nominal': 'A foundation is here. A little more intention could bear real fruit.',
+  'Growing': 'You’re growing. Keep leaning into the practices that are stretching you.',
+  'Grounded': 'You’re well-rooted. Consider how you might help others grow too.',
+  'Multiplying Disciple': 'You’re bearing fruit and helping others do the same. Keep going.',
+}
 
 function ExpandableRec({ r }: { r: Recommendation }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="bg-[#0F1117] rounded-2xl border border-white/8 p-6">
+    <div className="card p-6">
       <button onClick={() => setOpen(o => !o)} className="w-full flex items-start justify-between gap-3 text-left" aria-expanded={open}>
-        <div className="text-white/90 font-medium">{r.title}</div>
-        <div className="flex items-center gap-2 flex-shrink-0" style={{ fontFamily: 'sans-serif' }}>
-          <span className={clsx('text-[10px] px-2 py-0.5 rounded border font-bold', URGENCY_COLORS[r.urgency])}>{r.urgency}</span>
-          <span className="text-white/30 text-sm">{open ? '▾' : '▸'}</span>
-        </div>
+        <div className="font-serif text-lg text-ink">{r.title}</div>
+        <span className="text-ink-faint text-sm mt-1">{open ? '–' : '+'}</span>
       </button>
-      <p className="text-sm text-white/50 leading-relaxed mt-3" style={{ fontFamily: 'sans-serif' }}>{r.diagnosis}</p>
+      <p className="text-sm text-ink-soft leading-relaxed mt-2">{r.diagnosis}</p>
       {open && (
         <div className="animate-fade-up mt-4">
-          <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-4 mb-4">
-            <div className="text-[10px] text-blue-400 uppercase tracking-widest mb-2" style={{ fontFamily: 'sans-serif' }}>Scripture Anchor</div>
-            <p className="text-xs text-white/60 italic" style={{ fontFamily: 'sans-serif' }}>{r.biblical_anchor}</p>
+          <div className="bg-gold-soft rounded-xl p-4 mb-4">
+            <div className="eyebrow text-[#9A7424] mb-1.5">A word from Scripture</div>
+            <p className="text-sm text-ink italic font-serif">{r.biblical_anchor}</p>
           </div>
-          <p className="text-sm text-white/70 leading-relaxed" style={{ fontFamily: 'sans-serif' }}>{r.intervention}</p>
-          <div className="mt-3 text-[10px] text-amber-400 uppercase tracking-widest" style={{ fontFamily: 'sans-serif' }}>Timeline: {r.timeline}</div>
+          <p className="text-sm text-ink-soft leading-relaxed">{r.intervention}</p>
+          <div className="mt-3 text-xs text-ink-faint">Revisit in {r.timeline}</div>
         </div>
       )}
     </div>
   )
-}
-
-const TIER_COLORS: Record<string, string> = {
-  'Spiritually Disengaged': 'text-red-400',
-  'Nominal': 'text-orange-400',
-  'Growing': 'text-yellow-400',
-  'Grounded': 'text-emerald-400',
-  'Multiplying Disciple': 'text-blue-400',
-}
-
-const STATUS_CONFIG = {
-  strength: { text: 'text-emerald-400', label: 'STRENGTH' },
-  moderate: { text: 'text-amber-400', label: 'MODERATE' },
-  gap: { text: 'text-red-400', label: 'GAP' },
-  significant_gap: { text: 'text-red-400', label: 'SIGNIFICANT GAP' },
-}
-
-const URGENCY_COLORS: Record<string, string> = {
-  HIGH: 'text-red-400 bg-red-500/15 border-red-500/30',
-  MEDIUM: 'text-amber-400 bg-amber-500/15 border-amber-500/30',
-  LOW: 'text-blue-400 bg-blue-500/15 border-blue-500/30',
 }
 
 export default function IndividualReportPage() {
@@ -66,112 +51,91 @@ export default function IndividualReportPage() {
 
   const emailReport = async () => {
     if (!token) return
-    const email = window.prompt('Email your private report link to yourself:')
+    const email = window.prompt('Email your private reflection link to yourself:')
     if (!email) return
     try { await reportApi.deliver(token, email); setEmailSent(true) } catch { /* noop */ }
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center">
-        <div className="text-white/40 text-sm" style={{ fontFamily: 'sans-serif' }}>Preparing your report…</div>
-      </div>
-    )
+    return <div className="min-h-screen bg-canvas flex items-center justify-center"><div className="text-ink-faint text-sm">Preparing your reflection…</div></div>
   }
-
   if (isError || !report) {
     return (
-      <div className="min-h-screen bg-[#0A0C10] flex items-center justify-center px-6">
-        <div className="text-center text-white/40 text-sm" style={{ fontFamily: 'sans-serif' }}>
-          We couldn't find this report. Your report link may have expired, or scoring may still be in progress.
+      <div className="min-h-screen bg-canvas flex items-center justify-center px-6">
+        <div className="text-center text-ink-soft text-sm max-w-sm">
+          We couldn’t find this reflection. Your link may have expired, or scoring may still be finishing — try again in a moment.
         </div>
       </div>
     )
   }
 
-  const pillarList = Object.entries(PILLAR_LABELS).map(([key, label]) => ({
-    key, label,
-    score: Math.round(report.pillar_scores[key] || 0),
-    color: PILLAR_COLORS[key],
-    status: report.pillar_statuses[key] || 'moderate',
-  }))
+  const pillarList = Object.entries(PILLAR_LABELS).map(([key, label]) => {
+    const score = Math.round(report.pillar_scores[key] || 0)
+    const status = report.pillar_statuses[key] || 'moderate'
+    return { key, label, score, tone: STATUS_TONE[status] || STATUS_TONE.moderate }
+  })
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-white py-12 px-6" style={{ fontFamily: 'Georgia, serif' }}>
+    <div className="min-h-screen bg-canvas py-10 px-6">
       <div className="max-w-2xl mx-auto">
-        {/* Actions */}
-        <div className="flex justify-end gap-3 mb-6" style={{ fontFamily: 'sans-serif' }}>
-          <a href={reportApi.individualExportUrl(token!, 'html')} target="_blank" rel="noreferrer"
-            className="text-xs text-white/50 hover:text-white/80 border border-white/10 rounded-lg px-3 py-1.5">Print / Save</a>
-          <button onClick={emailReport} className="text-xs text-white/50 hover:text-white/80 border border-white/10 rounded-lg px-3 py-1.5">
-            {emailSent ? 'Sent ✓' : 'Email me this'}
-          </button>
+        <div className="flex items-center justify-between mb-8">
+          <Logo />
+          <div className="flex gap-2">
+            <a href={reportApi.individualExportUrl(token!, 'html')} target="_blank" rel="noreferrer" className="btn-ghost">Print / Save</a>
+            <button onClick={emailReport} className="btn-ghost">{emailSent ? 'Sent ✓' : 'Email me this'}</button>
+          </div>
         </div>
 
-        {/* Header */}
-        <div className="text-center mb-10 animate-fade-up">
-          <div className="text-[10px] text-white/30 uppercase tracking-widest mb-4" style={{ fontFamily: 'sans-serif' }}>BHIS · Your Personal Assessment</div>
-          <div className="text-5xl font-bold mb-2" style={{ fontFamily: 'sans-serif' }}>{report.composite_score}</div>
-          <div className={clsx('text-xl mb-1', TIER_COLORS[report.maturity_tier])}>{report.maturity_tier}</div>
-          <div className="text-sm text-white/40" style={{ fontFamily: 'sans-serif' }}>Overall Maturity Score</div>
+        {/* Hero */}
+        <div className="card p-8 text-center mb-6 animate-fade-up">
+          <div className="eyebrow mb-5">Your personal reflection</div>
+          <div className="flex justify-center mb-5"><ScoreRing score={report.composite_score} /></div>
+          <h1 className="text-2xl text-ink mb-2">{report.maturity_tier}</h1>
+          <p className="text-ink-soft text-sm max-w-md mx-auto leading-relaxed">{TIER_NOTE[report.maturity_tier] || ''}</p>
 
           {report.credibility_warning && (
-            <div className="mt-4 mx-auto max-w-sm p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-left">
-              <div className="text-xs text-amber-400 font-medium mb-1" style={{ fontFamily: 'sans-serif' }}>Consistency Note</div>
-              <p className="text-xs text-white/50 leading-relaxed" style={{ fontFamily: 'sans-serif' }}>
-                Some responses show a gap between how you see yourself and how your life actually looks. This isn't unusual —
-                most of us have blind spots. Use this as an invitation to ask someone you trust: "Does my life look like what I think it does?"
+            <div className="mt-6 mx-auto max-w-md bg-gold-soft rounded-xl p-4 text-left">
+              <div className="text-sm font-semibold text-[#9A7424] mb-1">A gentle observation</div>
+              <p className="text-sm text-ink-soft leading-relaxed">
+                A few answers point in slightly different directions — which is true of most of us. Take it not as a verdict
+                but as an invitation to ask someone you trust: “Does my life look like what I think it does?”
               </p>
             </div>
           )}
         </div>
 
-        {/* Pillar breakdown */}
-        <div className="bg-[#0F1117] rounded-2xl border border-white/8 p-6 mb-6">
-          <div className="text-[11px] text-white/60 uppercase tracking-widest mb-5" style={{ fontFamily: 'sans-serif' }}>Pillar Breakdown</div>
+        {/* Pillars */}
+        <div className="card p-6 mb-6">
+          <div className="eyebrow mb-5">Across seven areas of life</div>
           <div className="space-y-4">
-            {pillarList.map(p => {
-              const cfg = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.moderate
-              return (
-                <div key={p.key}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-sm text-white/70">{p.label}</span>
-                    <div className="flex items-center gap-2">
-                      <span className={clsx('text-[10px] font-semibold', cfg.text)} style={{ fontFamily: 'sans-serif' }}>{cfg.label}</span>
-                      <span className="text-sm font-bold" style={{ fontFamily: 'sans-serif', color: p.color }}>{p.score}</span>
-                    </div>
-                  </div>
-                  <div className="h-1.5 bg-white/6 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${p.score}%`, background: p.color, opacity: 0.7 }} />
+            {pillarList.map(p => (
+              <div key={p.key}>
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-sm text-ink-soft">{p.label}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className={clsx('text-xs font-medium', p.tone.text)}>{p.tone.label}</span>
+                    <span className="text-sm font-semibold text-ink w-7 text-right">{p.score}</span>
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Drift */}
-        <div className={clsx('rounded-2xl border p-4 mb-6 flex items-center justify-between',
-          report.drift_risk_level === 'low' ? 'bg-emerald-500/8 border-emerald-500/20' : 'bg-amber-500/8 border-amber-500/20')}>
-          <div>
-            <div className="text-[10px] text-white/40 uppercase tracking-widest mb-0.5" style={{ fontFamily: 'sans-serif' }}>Drift Risk</div>
-            <div className={clsx('text-lg font-semibold', report.drift_risk_level === 'low' ? 'text-emerald-400' : 'text-amber-400')} style={{ fontFamily: 'sans-serif' }}>
-              {report.drift_risk_level.toUpperCase()}
-            </div>
+                <div className="h-2 bg-warmth rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${p.score}%`, background: p.tone.color }} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Recommendations */}
         {report.recommendations.length > 0 && (
           <div className="space-y-4 mb-8">
-            <div className="text-[11px] text-white/60 uppercase tracking-widest" style={{ fontFamily: 'sans-serif' }}>Your Growth Areas</div>
+            <div className="eyebrow">Where to lean in next</div>
             {report.recommendations.map(r => <ExpandableRec key={r.priority} r={r} />)}
           </div>
         )}
 
-        <div className="text-center text-xs text-white/20" style={{ fontFamily: 'sans-serif' }}>
-          BHIS · Your responses are anonymous · This report is for personal growth, not judgment
-        </div>
+        <p className="text-center text-xs text-ink-faint">
+          Your answers are anonymous · This reflection is for your encouragement, not judgment
+        </p>
       </div>
     </div>
   )

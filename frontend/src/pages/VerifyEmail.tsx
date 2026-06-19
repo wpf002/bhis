@@ -14,20 +14,20 @@ export default function VerifyEmailPage() {
   }, [token])
 
   return (
-    <AuthShell subtitle="Email verification">
-      <div className="text-center space-y-4" style={{ fontFamily: 'sans-serif' }}>
-        {state === 'pending' && <p className="text-white/60 text-sm">Verifying your email…</p>}
+    <AuthShell title="Email verification" subtitle="Confirming your address">
+      <div className="text-center space-y-4">
+        {state === 'pending' && <p className="text-ink-soft text-sm">Verifying your email…</p>}
         {state === 'ok' && (
           <>
-            <div className="text-emerald-400 text-2xl">✓</div>
-            <p className="text-white/80 text-sm">Your email is verified.</p>
-            <Link to="/login" className="inline-block text-blue-400 hover:text-blue-300 text-sm">Continue to sign in →</Link>
+            <div className="w-12 h-12 rounded-full bg-sage-soft text-sage-dark text-2xl flex items-center justify-center mx-auto">✓</div>
+            <p className="text-ink text-sm">Your email is verified.</p>
+            <Link to="/login" className="inline-block text-sage font-medium hover:text-sage-dark text-sm">Continue to sign in →</Link>
           </>
         )}
         {state === 'error' && (
           <>
-            <p className="text-red-400 text-sm">This verification link is invalid or has expired.</p>
-            <Link to="/login" className="inline-block text-blue-400 hover:text-blue-300 text-sm">Back to sign in</Link>
+            <p className="text-clay text-sm">This verification link is invalid or has expired.</p>
+            <Link to="/login" className="inline-block text-sage font-medium hover:text-sage-dark text-sm">Back to sign in</Link>
           </>
         )}
       </div>

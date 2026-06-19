@@ -34,18 +34,18 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell subtitle="Sign in to your account">
+    <AuthShell title="Welcome back" subtitle="Sign in to your church dashboard">
       <form onSubmit={handleLogin} className="space-y-5">
         <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="pastor@yourchurch.com" required autoFocus />
         <Field label="Password" type="password" value={password} onChange={setPassword} placeholder="••••••••" required />
         <div className="text-right -mt-2">
-          <Link to="/forgot-password" className="text-xs text-white/40 hover:text-white/70" style={{ fontFamily: 'sans-serif' }}>Forgot password?</Link>
+          <Link to="/forgot-password" className="text-xs text-ink-faint hover:text-ink-soft">Forgot password?</Link>
         </div>
         <FormError message={error} />
-        <SubmitButton loading={loading} label="Sign In" />
+        <SubmitButton loading={loading} label="Sign in" />
       </form>
-      <p className="text-center text-xs text-white/30 mt-6" style={{ fontFamily: 'sans-serif' }}>
-        New to BHIS? <Link to="/register" className="text-blue-400 hover:text-blue-300">Create an account</Link>
+      <p className="text-center text-sm text-ink-soft mt-6">
+        New to BHIS? <Link to="/register" className="text-sage font-medium hover:text-sage-dark">Create an account</Link>
       </p>
     </AuthShell>
   )

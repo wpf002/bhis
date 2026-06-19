@@ -27,7 +27,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthShell subtitle="Create your church account">
+    <AuthShell title="Create your account" subtitle="Set up your church in a few minutes">
       <form onSubmit={submit} className="space-y-5">
         <div className="grid grid-cols-2 gap-3">
           <Field label="First name" value={form.first_name} onChange={v => set('first_name', v)} required autoFocus />
@@ -36,10 +36,10 @@ export default function RegisterPage() {
         <Field label="Email" type="email" value={form.email} onChange={v => set('email', v)} placeholder="pastor@yourchurch.com" required />
         <Field label="Password" type="password" value={form.password} onChange={v => set('password', v)} placeholder="At least 8 characters" required />
         <FormError message={error} />
-        <SubmitButton loading={loading} label="Create Account" />
+        <SubmitButton loading={loading} label="Create account" />
       </form>
-      <p className="text-center text-xs text-white/30 mt-6" style={{ fontFamily: 'sans-serif' }}>
-        Already have an account? <Link to="/login" className="text-blue-400 hover:text-blue-300">Sign in</Link>
+      <p className="text-center text-sm text-ink-soft mt-6">
+        Already have an account? <Link to="/login" className="text-sage font-medium hover:text-sage-dark">Sign in</Link>
       </p>
     </AuthShell>
   )

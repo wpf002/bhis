@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell subtitle="Reset your password">
+    <AuthShell title="Reset your password" subtitle="We'll email you a link to set a new one">
       {sent ? (
         <FormNote>If an account exists for {email}, a reset link is on its way.</FormNote>
       ) : (
@@ -24,8 +24,8 @@ export default function ForgotPasswordPage() {
           <SubmitButton loading={loading} label="Send reset link" />
         </form>
       )}
-      <p className="text-center text-xs text-white/30 mt-6" style={{ fontFamily: 'sans-serif' }}>
-        <Link to="/login" className="text-blue-400 hover:text-blue-300">Back to sign in</Link>
+      <p className="text-center text-sm text-ink-soft mt-6">
+        <Link to="/login" className="text-sage font-medium hover:text-sage-dark">Back to sign in</Link>
       </p>
     </AuthShell>
   )
