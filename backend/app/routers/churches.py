@@ -2,16 +2,19 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.config import settings
 from app.database import get_db
-from app.models import Church, User, ChurchAggregateScore, ChurchInvite
+from app.models import (
+    Church, User, ChurchAggregateScore, ChurchInvite,
+    SurveyInstance, RespondentSession,
+)
 from app.schemas import (
     ChurchCreate, ChurchResponse, ChurchDashboardSchema,
     InviteCreate, InviteResponse, ChurchSettingsUpdate,
 )
-from app.services.privacy import is_below_floor, suppressed_payload
+from app.services.privacy import is_below_floor, suppressed_payload, MIN_N_DEFAULT
 from app.core.security import generate_capability_token, hash_token
 from app.core.dependencies import get_current_user, require_role
 
@@ -132,6 +135,30 @@ async def get_dashboard(
     if not church or not church.is_active:
         raise HTTPException(status_code=404, detail="Church not found")
 
+    # The most recent survey for this church, with its live completed-response
+    # count — so the dashboard can show "your assessment is live and collecting"
+    # before there's enough data to render aggregate results.
+    instance = (await db.execute(
+        select(SurveyInstance)
+        .where(SurveyInstance.church_id == church_id)
+        .order_by(SurveyInstance.created_at.desc())
+        .limit(1)
+    )).scalar_one_or_none()
+    active_survey = None
+    if instance is not None:
+        completed = (await db.execute(
+            select(func.count(RespondentSession.id)).where(
+                RespondentSession.survey_instance_id == instance.id,
+                RespondentSession.is_complete == True,  # noqa: E712
+            )
+        )).scalar_one()
+        active_survey = {
+            "id": instance.id,
+            "status": instance.status,
+            "response_count": completed,
+            "responses_needed": MIN_N_DEFAULT,
+        }
+
     # Get latest aggregate score
     agg_result = await db.execute(
         select(ChurchAggregateScore)
@@ -145,6 +172,7 @@ async def get_dashboard(
     if not agg:
         return {
             "church": church,
+            "active_survey": active_survey,
             "health_score": None,
             "archetype": None,
             "drift_risk_level": None,
@@ -157,10 +185,11 @@ async def get_dashboard(
 
     # Anonymity floor: below N_MIN respondents, withhold the breakdown.
     if is_below_floor(agg.respondent_count):
-        return {"church": church, **suppressed_payload(agg.respondent_count)}
+        return {"church": church, "active_survey": active_survey, **suppressed_payload(agg.respondent_count)}
 
     return {
         "church": church,
+        "active_survey": active_survey,
         "survey_instance_id": agg.survey_instance_id,
         "health_score": agg.health_score,
         "archetype": agg.archetype,

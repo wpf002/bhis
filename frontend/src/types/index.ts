@@ -42,8 +42,16 @@ export interface Church {
   created_at: string
 }
 
+export interface ActiveSurvey {
+  id: string
+  status: 'draft' | 'active' | 'closed' | 'archived'
+  response_count: number
+  responses_needed: number
+}
+
 export interface ChurchDashboard {
   church: Church
+  active_survey?: ActiveSurvey | null
   survey_instance_id?: string | null
   health_score: number | null
   archetype: string | null

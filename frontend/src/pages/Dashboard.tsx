@@ -8,7 +8,7 @@ import {
 import { churchApi, reportApi } from '../services/api'
 import { useAuthStore } from '../hooks/useAuth'
 import { PILLAR_LABELS, PILLAR_COLORS, MATURITY_TIER_COLORS } from '../types'
-import type { ChurchReport, SuppressedReport, MaturityTier } from '../types'
+import type { ChurchReport, SuppressedReport, MaturityTier, ActiveSurvey } from '../types'
 import { Logo, ScoreRing, Badge, statusFromScore, STATUS_TONE, EmptyState } from '../components/ui'
 import clsx from 'clsx'
 
@@ -44,13 +44,9 @@ export default function DashboardPage() {
   if (!dashboard?.health_score) {
     return (
       <div className="min-h-screen bg-canvas">
-        <Header name={dashboard?.church?.name} count={0} instanceId={null} onSignOut={clearAuth} />
-        <div className="max-w-6xl mx-auto px-6 pt-16">
-          <EmptyState
-            title="No results yet"
-            message="Once enough of your congregation has reflected, your church’s health and insights will gather here."
-            action={<Link to="/admin" className="btn-primary">Launch a survey</Link>}
-          />
+        <Header name={dashboard?.church?.name} count={dashboard?.active_survey?.response_count || 0} instanceId={null} onSignOut={clearAuth} />
+        <div className="max-w-6xl mx-auto px-6 pt-12">
+          <SurveyStatusPanel survey={dashboard?.active_survey || null} />
         </div>
       </div>
     )
@@ -231,6 +227,80 @@ function Header({ name, count, instanceId, onSignOut }: { name?: string; count: 
         </div>
       </div>
     </header>
+  )
+}
+
+function SurveyStatusPanel({ survey }: { survey: ActiveSurvey | null }) {
+  const [copied, setCopied] = useState(false)
+
+  if (!survey) {
+    return (
+      <EmptyState
+        title="Let’s get started"
+        message="Create your first assessment and invite your congregation to reflect."
+        action={<Link to="/admin" className="btn-primary">Create a survey</Link>}
+      />
+    )
+  }
+  if (survey.status === 'draft') {
+    return (
+      <EmptyState
+        title="Your survey is ready"
+        message="You’ve set up an assessment — launch it when you’re ready to invite your congregation."
+        action={<Link to="/admin" className="btn-primary">Manage &amp; launch</Link>}
+      />
+    )
+  }
+  if (survey.status === 'closed' || survey.status === 'archived') {
+    return (
+      <EmptyState
+        title="This survey has closed"
+        message={`${survey.response_count} ${survey.response_count === 1 ? 'person' : 'people'} responded — fewer than the ${survey.responses_needed} needed to show results while keeping every answer anonymous.`}
+        action={<Link to="/admin" className="btn-primary">Start a new survey</Link>}
+      />
+    )
+  }
+
+  // Active and collecting
+  const link = `${window.location.origin}/survey/${survey.id}`
+  const remaining = Math.max(0, survey.responses_needed - survey.response_count)
+  const pct = Math.min(100, Math.round((survey.response_count / survey.responses_needed) * 100))
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* noop */ }
+  }
+
+  return (
+    <div className="card p-8 max-w-2xl mx-auto text-center">
+      <div className="inline-flex items-center gap-2 rounded-full bg-sage-soft border border-sage/25 px-3 py-1 text-xs font-medium text-sage-dark mb-4">
+        <span className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" /> Live · collecting responses
+      </div>
+      <h2 className="text-2xl text-ink mb-2">Your assessment is live</h2>
+      <p className="text-ink-soft text-sm max-w-md mx-auto mb-6">
+        {remaining > 0
+          ? `${survey.response_count} of ${survey.responses_needed} people have responded. Results unlock once at least ${survey.responses_needed} have reflected — enough to keep every answer anonymous.`
+          : 'Enough people have responded — your results are being prepared. Refresh in a moment.'}
+      </p>
+
+      <div className="max-w-sm mx-auto mb-7">
+        <div className="h-2.5 bg-warmth rounded-full overflow-hidden">
+          <div className="h-full bg-sage rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+        </div>
+        <div className="text-xs text-ink-faint mt-2">
+          {survey.response_count} responded{remaining > 0 ? ` · ${remaining} more to unlock results` : ''}
+        </div>
+      </div>
+
+      <div className="text-left max-w-md mx-auto">
+        <label className="label">Share this link with your congregation (no login needed)</label>
+        <div className="flex gap-2">
+          <input readOnly value={link} className="input flex-1 text-xs" aria-label="Survey link" />
+          <button onClick={copy} className="btn-primary px-4 py-2">{copied ? 'Copied ✓' : 'Copy'}</button>
+        </div>
+        <div className="mt-4 text-center">
+          <Link to="/admin" className="text-sm text-ink-soft hover:text-ink">Manage this survey →</Link>
+        </div>
+      </div>
+    </div>
   )
 }
 
