@@ -76,12 +76,7 @@ export default function DashboardPage() {
             <ScoreRing score={healthScore} />
             <div className="flex-1 min-w-56">
               <div className="eyebrow mb-1">Overall Health</div>
-              <h1 className="text-3xl text-ink mb-2">{TIER_WORD(healthScore)}</h1>
-              {dashboard.archetype && (
-                <span className="inline-flex items-center gap-2 rounded-full bg-gold-soft border border-gold/30 px-3 py-1 text-sm text-[#9A7424]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gold" /> {dashboard.archetype}
-                </span>
-              )}
+              <h1 className="text-3xl text-ink">{TIER_WORD(healthScore)}</h1>
             </div>
             <div className="grid grid-cols-3 gap-3 w-full sm:w-auto">
               <Stat label="Respondents" value={String(dashboard.respondent_count || 0)} />

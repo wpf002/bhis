@@ -93,9 +93,8 @@ def render_church_html(data: Dict[str, Any]) -> str:
     )
     body = (
         f"<h1>Church Health Report</h1>"
-        f"<p class='muted'>Archetype: {escape(str(data.get('archetype', '')))} · "
-        f"Respondents: {data.get('respondent_count', 0)} · "
-        f"Drift risk: {escape(str(data.get('drift_risk_level', '')))}</p>"
+        f"<p class='muted'>Responses: {data.get('respondent_count', 0)} · "
+        f"Drift: {escape(str(data.get('drift_risk_level', '')))}</p>"
         f"<div class='score'>{data.get('health_score', 0)}</div>"
         f"<h2>Pillars</h2>{_pillar_table(data.get('pillar_scores', {}))}"
         f"<h2>Maturity Distribution</h2><table><tr><th>Tier</th><th>Share</th></tr>{dist_rows}</table>"
