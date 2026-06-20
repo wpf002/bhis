@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell title="Reset your password" subtitle="We'll email you a link to set a new one">
+    <AuthShell title="Reset Password" subtitle="We’ll email you a link to set a new one">
       {sent ? (
         <FormNote>If an account exists for {email}, a reset link is on its way.</FormNote>
       ) : (

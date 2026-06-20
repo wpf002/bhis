@@ -61,7 +61,7 @@ export default function SurveyPage() {
       setPhase('questions')
       startTime.current = Date.now()
     } catch {
-      setError('This assessment isn’t open right now.')
+      setError('This survey isn’t open right now.')
     }
   }
 
@@ -121,21 +121,21 @@ export default function SurveyPage() {
       <div className="min-h-screen bg-canvas flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-lg text-center animate-fade-up">
           <div className="flex justify-center mb-8"><Logo /></div>
-          <h1 className="text-3xl text-ink mb-4">A few honest minutes</h1>
+          <h1 className="text-3xl text-ink mb-4">Take the Assessment</h1>
           <p className="text-ink-soft leading-relaxed mb-6">
-            This reflection helps your church care for its people well. There are no right or wrong
-            answers — just answer honestly. It takes about {meta?.estimated_minutes ?? 10}–{(meta?.estimated_minutes ?? 10) + 2} minutes
-            {meta ? ` (${meta.question_count} questions)` : ''}.
+            This helps your church understand how it’s doing. There are no right or wrong answers. It takes
+            about {meta?.estimated_minutes ?? 10}–{(meta?.estimated_minutes ?? 10) + 2} minutes
+            {meta ? ` (${meta.question_count} questions).` : '.'}
           </p>
           <div className="card p-5 text-left mb-7">
             <div className="text-sm font-semibold text-sage-dark mb-1">Your answers are private</div>
             <p className="text-sm text-ink-soft leading-relaxed">
-              Your church sees combined results, not your name attached to any answer. At the end, you’ll
-              receive your own private reflection to keep.
+              Your church only sees combined results, not your name attached to any answer. You’ll get
+              your own personal results at the end.
             </p>
           </div>
           {error && <div className="text-clay text-sm mb-4">{error}</div>}
-          <button onClick={begin} className="btn-primary px-8">Begin</button>
+          <button onClick={begin} className="btn-primary px-8">Start</button>
         </div>
       </div>
     )
@@ -146,8 +146,8 @@ export default function SurveyPage() {
       <div className="min-h-screen bg-canvas flex items-center justify-center px-6">
         <div className="text-center animate-fade-up">
           <div className="w-14 h-14 rounded-full bg-sage-soft text-sage-dark text-2xl flex items-center justify-center mx-auto mb-4">✓</div>
-          <div className="text-ink text-xl mb-1 font-serif">Thank you</div>
-          <div className="text-ink-soft text-sm">Preparing your private reflection…</div>
+          <div className="text-ink text-xl mb-1 font-serif">Thanks</div>
+          <div className="text-ink-soft text-sm">Preparing your results…</div>
         </div>
       </div>
     )
@@ -205,7 +205,7 @@ export default function SurveyPage() {
 
             {currentQ.question_type === 'forced_prioritization' && (
               <div className="space-y-2.5">
-                <p className="text-sm text-ink-faint mb-3">Tap in order, from most to least important.</p>
+                <p className="text-sm text-ink-faint mb-3">Tap each option in order, from most to least important.</p>
                 {currentQ.options.map(opt => {
                   const rank = (currentResponse?.ranking_order || []).indexOf(opt.option_letter)
                   return (
@@ -222,7 +222,7 @@ export default function SurveyPage() {
             {currentQ.question_type === 'open_ended' && (
               <div>
                 <textarea value={currentResponse?.text_response || ''} onChange={e => record({ text_response: e.target.value })}
-                  placeholder="Share as much or as little as you like… (optional)" rows={5} className="input resize-none leading-relaxed" />
+                  placeholder="Share as much or as little as you like (optional)" rows={5} className="input resize-none leading-relaxed" />
                 <div className="text-right text-xs text-ink-faint mt-1.5">{(currentResponse?.text_response || '').length} characters</div>
               </div>
             )}

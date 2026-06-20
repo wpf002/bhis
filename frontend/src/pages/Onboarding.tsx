@@ -40,8 +40,8 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-2xl text-ink mb-1">What’s your church called?</h2>
-                <p className="text-sm text-ink-soft">This is how it’ll appear across your dashboard and reports.</p>
+                <h2 className="text-2xl text-ink mb-1">Church Name</h2>
+                <p className="text-sm text-ink-soft">How your church will appear across the dashboard and reports.</p>
               </div>
               <input value={form.name} onChange={e => update('name', e.target.value)} className="input" placeholder="Covenant Bible Church" autoFocus />
               <div className="grid grid-cols-2 gap-3">
@@ -55,7 +55,7 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-2xl text-ink mb-1">How large is your congregation?</h2>
+                <h2 className="text-2xl text-ink mb-1">Congregation Size</h2>
                 <p className="text-sm text-ink-soft">Used to compare you with similar-sized churches over time.</p>
               </div>
               <div className="space-y-2.5">
@@ -71,7 +71,7 @@ export default function OnboardingPage() {
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-2xl text-ink mb-1">How would you describe your church?</h2>
+                <h2 className="text-2xl text-ink mb-1">Church Tradition</h2>
                 <p className="text-sm text-ink-soft">Helps us frame your results in the right context.</p>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
@@ -83,7 +83,7 @@ export default function OnboardingPage() {
               </div>
               <input value={form.denomination} onChange={e => update('denomination', e.target.value)} className="input" placeholder="Denomination (optional)" />
               <button onClick={() => mutation.mutate()} disabled={!form.theological_profile || mutation.isPending} className="btn-primary w-full">
-                {mutation.isPending ? 'Setting things up…' : 'Finish setup'}
+                {mutation.isPending ? 'Setting things up…' : 'Finish Setup'}
               </button>
             </div>
           )}

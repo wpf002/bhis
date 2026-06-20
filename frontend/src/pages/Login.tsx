@@ -34,7 +34,7 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to your church dashboard">
+    <AuthShell title="Sign In" subtitle="Welcome back to your church dashboard">
       <form onSubmit={handleLogin} className="space-y-5">
         <Field label="Email" type="email" value={email} onChange={setEmail} placeholder="pastor@yourchurch.com" required autoFocus />
         <Field label="Password" type="password" value={password} onChange={setPassword} placeholder="••••••••" required />

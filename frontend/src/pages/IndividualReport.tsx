@@ -8,11 +8,11 @@ import { Logo, ScoreRing, STATUS_TONE } from '../components/ui'
 import clsx from 'clsx'
 
 const TIER_NOTE: Record<string, string> = {
-  'Spiritually Disengaged': 'There’s a tender invitation here — small, faithful steps make a real difference.',
-  'Nominal': 'A foundation is here. A little more intention could bear real fruit.',
-  'Growing': 'You’re growing. Keep leaning into the practices that are stretching you.',
-  'Grounded': 'You’re well-rooted. Consider how you might help others grow too.',
-  'Multiplying Disciple': 'You’re bearing fruit and helping others do the same. Keep going.',
+  'Spiritually Disengaged': 'A good place to start. Small, regular steps add up.',
+  'Nominal': 'There’s a foundation here. A bit more consistency can take you further.',
+  'Growing': 'You’re growing. Stay with the practices that are stretching you.',
+  'Grounded': 'You’re well-rooted. A good time to start helping others grow.',
+  'Multiplying Disciple': 'You’re bearing fruit and helping others do the same.',
 }
 
 function ExpandableRec({ r }: { r: Recommendation }) {
@@ -27,11 +27,11 @@ function ExpandableRec({ r }: { r: Recommendation }) {
       {open && (
         <div className="animate-fade-up mt-4">
           <div className="bg-gold-soft rounded-xl p-4 mb-4">
-            <div className="eyebrow text-[#9A7424] mb-1.5">A word from Scripture</div>
+            <div className="eyebrow text-[#9A7424] mb-1.5">Scripture</div>
             <p className="text-sm text-ink italic font-serif">{r.biblical_anchor}</p>
           </div>
           <p className="text-sm text-ink-soft leading-relaxed">{r.intervention}</p>
-          <div className="mt-3 text-xs text-ink-faint">Revisit in {r.timeline}</div>
+          <div className="mt-3 text-xs text-ink-faint">Check back in {r.timeline}</div>
         </div>
       )}
     </div>
@@ -51,19 +51,19 @@ export default function IndividualReportPage() {
 
   const emailReport = async () => {
     if (!token) return
-    const email = window.prompt('Email your private reflection link to yourself:')
+    const email = window.prompt('Email this link to yourself:')
     if (!email) return
     try { await reportApi.deliver(token, email); setEmailSent(true) } catch { /* noop */ }
   }
 
   if (isLoading) {
-    return <div className="min-h-screen bg-canvas flex items-center justify-center"><div className="text-ink-faint text-sm">Preparing your reflection…</div></div>
+    return <div className="min-h-screen bg-canvas flex items-center justify-center"><div className="text-ink-faint text-sm">Preparing your results…</div></div>
   }
   if (isError || !report) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center px-6">
         <div className="text-center text-ink-soft text-sm max-w-sm">
-          We couldn’t find this reflection. Your link may have expired, or scoring may still be finishing — try again in a moment.
+          We couldn’t find these results. Your link may have expired, or scoring may still be finishing. Try again in a moment.
         </div>
       </div>
     )
@@ -88,17 +88,17 @@ export default function IndividualReportPage() {
 
         {/* Hero */}
         <div className="card p-8 text-center mb-6 animate-fade-up">
-          <div className="eyebrow mb-5">Your personal reflection</div>
+          <div className="eyebrow mb-5">Your Results</div>
           <div className="flex justify-center mb-5"><ScoreRing score={report.composite_score} /></div>
           <h1 className="text-2xl text-ink mb-2">{report.maturity_tier}</h1>
           <p className="text-ink-soft text-sm max-w-md mx-auto leading-relaxed">{TIER_NOTE[report.maturity_tier] || ''}</p>
 
           {report.credibility_warning && (
             <div className="mt-6 mx-auto max-w-md bg-gold-soft rounded-xl p-4 text-left">
-              <div className="text-sm font-semibold text-[#9A7424] mb-1">A gentle observation</div>
+              <div className="text-sm font-semibold text-[#9A7424] mb-1">Something to consider</div>
               <p className="text-sm text-ink-soft leading-relaxed">
-                A few answers point in slightly different directions — which is true of most of us. Take it not as a verdict
-                but as an invitation to ask someone you trust: “Does my life look like what I think it does?”
+                A few of your answers point in different directions, which is true for most of us. Take it as a prompt
+                to ask someone you trust: “Does my life look like what I think it does?”
               </p>
             </div>
           )}
@@ -106,7 +106,7 @@ export default function IndividualReportPage() {
 
         {/* Pillars */}
         <div className="card p-6 mb-6">
-          <div className="eyebrow mb-5">Across seven areas of life</div>
+          <div className="eyebrow mb-5">The Seven Areas</div>
           <div className="space-y-4">
             {pillarList.map(p => (
               <div key={p.key}>
@@ -128,13 +128,13 @@ export default function IndividualReportPage() {
         {/* Recommendations */}
         {report.recommendations.length > 0 && (
           <div className="space-y-4 mb-8">
-            <div className="eyebrow">Where to lean in next</div>
+            <div className="eyebrow">Where to Focus Next</div>
             {report.recommendations.map(r => <ExpandableRec key={r.priority} r={r} />)}
           </div>
         )}
 
         <p className="text-center text-xs text-ink-faint">
-          Your answers are kept private · This reflection is for your encouragement, not judgment
+          Your answers are kept private. This is for your encouragement, not judgment.
         </p>
       </div>
     </div>

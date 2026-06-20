@@ -33,10 +33,10 @@ export function Card({ children, className }: { children: ReactNode; className?:
 // ── Status tones (warm, encouraging — not red/green alerts) ───────────────────
 
 export const STATUS_TONE: Record<string, { label: string; color: string; text: string; bg: string; border: string }> = {
-  strength:        { label: 'Strength',    color: '#4F7355', text: 'text-sage-dark', bg: 'bg-sage-soft',  border: 'border-sage/25' },
-  moderate:        { label: 'Steady',      color: '#C39A4A', text: 'text-[#9A7424]', bg: 'bg-gold-soft',  border: 'border-gold/30' },
-  gap:             { label: 'Growing',     color: '#BE6E47', text: 'text-clay',      bg: 'bg-clay-soft',  border: 'border-clay/25' },
-  significant_gap: { label: 'Tender area', color: '#A85638', text: 'text-clay',      bg: 'bg-clay-soft',  border: 'border-clay/30' },
+  strength:        { label: 'Strong',          color: '#4F7355', text: 'text-sage-dark', bg: 'bg-sage-soft', border: 'border-sage/25' },
+  moderate:        { label: 'Solid',           color: '#C39A4A', text: 'text-[#9A7424]', bg: 'bg-gold-soft', border: 'border-gold/30' },
+  gap:             { label: 'Growing',         color: '#BE6E47', text: 'text-clay',      bg: 'bg-clay-soft', border: 'border-clay/25' },
+  significant_gap: { label: 'Needs Attention', color: '#A85638', text: 'text-clay',      bg: 'bg-clay-soft', border: 'border-clay/30' },
 }
 
 export function statusFromScore(score: number): keyof typeof STATUS_TONE {

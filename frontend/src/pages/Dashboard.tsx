@@ -12,7 +12,7 @@ import type { ChurchReport, SuppressedReport, MaturityTier, ActiveSurvey } from 
 import { Logo, ScoreRing, Badge, statusFromScore, STATUS_TONE, EmptyState } from '../components/ui'
 import clsx from 'clsx'
 
-const TABS = ['Overview', 'The seven areas', 'Your people', 'Where to focus'] as const
+const TABS = ['Overview', 'The Seven Areas', 'Your People', 'Where to Focus'] as const
 type Tab = typeof TABS[number]
 
 const TIER_WORD = (s: number) => s >= 81 ? 'Multiplying' : s >= 61 ? 'Grounded' : s >= 41 ? 'Growing' : s >= 21 ? 'Nominal' : 'Disengaged'
@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const { data: report } = useQuery({
     queryKey: ['churchReport', instanceId],
     queryFn: () => reportApi.church(instanceId!),
-    enabled: !!instanceId && (tab === 'Where to focus' || !!selectedPillar),
+    enabled: !!instanceId && (tab === 'Where to Focus' || !!selectedPillar),
   })
 
   if (!churchId) return <Navigate to="/onboarding" replace />
@@ -75,7 +75,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center gap-8">
             <ScoreRing score={healthScore} />
             <div className="flex-1 min-w-56">
-              <div className="eyebrow mb-1">Overall health</div>
+              <div className="eyebrow mb-1">Overall Health</div>
               <h1 className="text-3xl text-ink mb-2">{TIER_WORD(healthScore)}</h1>
               {dashboard.archetype && (
                 <span className="inline-flex items-center gap-2 rounded-full bg-gold-soft border border-gold/30 px-3 py-1 text-sm text-[#9A7424]">
@@ -84,8 +84,8 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="grid grid-cols-3 gap-3 w-full sm:w-auto">
-              <Stat label="People" value={String(dashboard.respondent_count || 0)} />
-              <Stat label="Areas to watch" value={(dashboard.drift_risk_level || '—').replace(/^\w/, c => c.toUpperCase())} />
+              <Stat label="Respondents" value={String(dashboard.respondent_count || 0)} />
+              <Stat label="Drift Risk" value={(dashboard.drift_risk_level || '—').replace(/^\w/, c => c.toUpperCase())} />
               <Stat label="Multiplying" value={`${dashboard.maturity_distribution?.['Multiplying Disciple'] || 0}%`} />
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
         {tab === 'Overview' && (
           <div className="grid md:grid-cols-3 gap-4">
             <div className="card p-6 md:col-span-2">
-              <div className="eyebrow mb-4">The seven areas of health</div>
+              <div className="eyebrow mb-4">The Seven Areas of Health</div>
               <ResponsiveContainer width="100%" height={300}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="#E9E1D3" />
@@ -114,7 +114,7 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
             <div className="card p-6">
-              <div className="eyebrow mb-4">Where your people are</div>
+              <div className="eyebrow mb-4">Spiritual Maturity</div>
               <div className="space-y-3.5">
                 {maturityData.map(m => (
                   <div key={m.tier}>
@@ -132,7 +132,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {tab === 'The seven areas' && (
+        {tab === 'The Seven Areas' && (
           <div className="grid sm:grid-cols-2 gap-3">
             {pillarList.map(p => (
               <button key={p.key} onClick={() => setSelectedPillar(p.key)} aria-label={`View ${p.label}`}
@@ -150,10 +150,10 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {tab === 'Your people' && (
+        {tab === 'Your People' && (
           <div className="grid md:grid-cols-2 gap-4">
             <div className="card p-6">
-              <div className="eyebrow mb-4">Spiritual maturity across the congregation</div>
+              <div className="eyebrow mb-4">Spiritual Maturity Across the Congregation</div>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={maturityData}>
                   <XAxis dataKey="tier" tick={{ fill: '#9A917F', fontSize: 9 }} axisLine={false} tickLine={false} interval={0} />
@@ -166,7 +166,7 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </div>
             <div className="card p-6">
-              <div className="eyebrow mb-4">At a glance</div>
+              <div className="eyebrow mb-4">At a Glance</div>
               <div className="space-y-3.5">
                 {pillarList.slice(0, 6).map(p => (
                   <div key={p.key} className="flex items-center gap-3">
@@ -182,7 +182,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {tab === 'Where to focus' && <FocusTab report={report} />}
+        {tab === 'Where to Focus' && <FocusTab report={report} />}
       </div>
 
       {selectedPillar && (
@@ -190,7 +190,7 @@ export default function DashboardPage() {
       )}
 
       <p className="text-center text-xs text-ink-faint mt-10">
-        Responses are kept private · BHIS helps you shepherd, never surveil
+        Individual responses are private. Only aggregate results are shown.
       </p>
     </div>
   )
@@ -236,27 +236,27 @@ function SurveyStatusPanel({ survey }: { survey: ActiveSurvey | null }) {
   if (!survey) {
     return (
       <EmptyState
-        title="Let’s get started"
-        message="Create your first assessment and invite your congregation to reflect."
-        action={<Link to="/admin" className="btn-primary">Create a survey</Link>}
+        title="No surveys yet"
+        message="Create your first survey and send it to your congregation."
+        action={<Link to="/admin" className="btn-primary">Create a Survey</Link>}
       />
     )
   }
   if (survey.status === 'draft') {
     return (
       <EmptyState
-        title="Your survey is ready"
-        message="You’ve set up an assessment — launch it when you’re ready to invite your congregation."
-        action={<Link to="/admin" className="btn-primary">Manage &amp; launch</Link>}
+        title="Survey ready to launch"
+        message="You’ve created a survey. Launch it when you’re ready to send it out."
+        action={<Link to="/admin" className="btn-primary">Manage &amp; Launch</Link>}
       />
     )
   }
   if (survey.status === 'closed' || survey.status === 'archived') {
     return (
       <EmptyState
-        title="This survey has closed"
+        title="Survey closed"
         message="No one responded before it closed. Start a new one whenever you’re ready."
-        action={<Link to="/admin" className="btn-primary">Start a new survey</Link>}
+        action={<Link to="/admin" className="btn-primary">Start a New Survey</Link>}
       />
     )
   }
@@ -273,13 +273,13 @@ function SurveyStatusPanel({ survey }: { survey: ActiveSurvey | null }) {
       <div className="inline-flex items-center gap-2 rounded-full bg-sage-soft border border-sage/25 px-3 py-1 text-xs font-medium text-sage-dark mb-4">
         <span className="w-1.5 h-1.5 rounded-full bg-sage animate-pulse" /> Live
       </div>
-      <h2 className="text-2xl text-ink mb-2">Your assessment is live</h2>
+      <h2 className="text-2xl text-ink mb-2">Survey is live</h2>
       <p className="text-ink-soft text-sm max-w-md mx-auto mb-6">
-        Share the link below with your congregation. Your church’s results will appear here as people respond.
+        Share the link below with your congregation. Results will appear here as people respond.
       </p>
 
       <div className="text-left max-w-md mx-auto">
-        <label className="label">Share this link with your congregation (no login needed)</label>
+        <label className="label">Share this link (no login needed)</label>
         <div className="flex gap-2">
           <input readOnly value={link} className="input flex-1 text-xs" aria-label="Survey link" />
           <button onClick={copy} className="btn-primary px-4 py-2">{copied ? 'Copied ✓' : 'Copy'}</button>
@@ -302,10 +302,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function FocusTab({ report }: { report?: ChurchReport | SuppressedReport }) {
-  if (!report) return <EmptyState title="Gathering insight" message="Recommendations appear once your church has enough responses." />
-  if ('suppressed' in report && report.suppressed) return <EmptyState title="Protecting anonymity" message={report.message} />
+  if (!report) return <EmptyState title="No Recommendations Yet" message="Recommendations appear once your church has responses." />
+  if ('suppressed' in report && report.suppressed) return <EmptyState title="Results Protected" message={report.message} />
   const recs = (report as ChurchReport).recommendations || []
-  if (recs.length === 0) return <EmptyState title="A healthy sign" message="No priority areas flagged right now — keep doing what you’re doing." />
+  if (recs.length === 0) return <EmptyState title="Nothing to Flag" message="No priority areas right now. Keep doing what you’re doing." />
   return (
     <div className="space-y-4">
       {recs.map(r => (
@@ -315,11 +315,11 @@ function FocusTab({ report }: { report?: ChurchReport | SuppressedReport }) {
           </div>
           <p className="text-sm text-ink-soft leading-relaxed mb-4">{r.diagnosis}</p>
           <div className="bg-gold-soft rounded-xl p-4 mb-3">
-            <div className="eyebrow text-[#9A7424] mb-1.5">A word from Scripture</div>
+            <div className="eyebrow text-[#9A7424] mb-1.5">Scripture</div>
             <p className="text-sm text-ink italic font-serif">{r.biblical_anchor}</p>
           </div>
           <p className="text-sm text-ink-soft leading-relaxed">{r.intervention}</p>
-          <div className="mt-3 text-xs text-ink-faint">Revisit in {r.timeline}</div>
+          <div className="mt-3 text-xs text-ink-faint">Check back in {r.timeline}</div>
         </div>
       ))}
     </div>
@@ -327,10 +327,10 @@ function FocusTab({ report }: { report?: ChurchReport | SuppressedReport }) {
 }
 
 const STATUS_MEANING: Record<string, string> = {
-  strength: 'A clear strength — this area is healthy across your congregation. Keep nurturing it.',
-  moderate: 'Steady. There’s real foundation here, with room to deepen through teaching and practice.',
-  gap: 'Growing. This area is still developing and would welcome some intentional attention this season.',
-  significant_gap: 'A tender area. One of the most meaningful places to invest care — see the focus suggestions.',
+  strength: 'A clear strength across your congregation.',
+  moderate: 'Solid, with room to grow.',
+  gap: 'Lagging. Worth focused attention.',
+  significant_gap: 'Needs real attention. See the recommendations below.',
 }
 
 type PillarRow = { key: string; label: string; score: number; color: string; status: string }
@@ -357,7 +357,7 @@ function PillarModal({ pillar, report, onClose }: { pillar: PillarRow; report?: 
         <p className="text-sm text-ink-soft leading-relaxed mb-4">{STATUS_MEANING[pillar.status] || ''}</p>
         {recs.length > 0 && (
           <div className="border-t border-line pt-4">
-            <div className="eyebrow mb-2">Where to lean in</div>
+            <div className="eyebrow mb-2">Where to Focus</div>
             {recs.map(r => (
               <div key={r.priority} className="mb-3">
                 <div className="font-serif text-ink">{r.title}</div>

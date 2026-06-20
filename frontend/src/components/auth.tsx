@@ -12,7 +12,7 @@ export function AuthShell({ children, title, subtitle }: { children: ReactNode; 
         </div>
         <div className="card p-8">{children}</div>
         <p className="text-center text-xs text-ink-faint mt-6">
-          Biblical Health Intelligence · A tool for shepherding, not scoring
+          Biblical Health Intelligence System
         </p>
       </div>
     </div>

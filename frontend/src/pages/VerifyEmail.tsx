@@ -14,7 +14,7 @@ export default function VerifyEmailPage() {
   }, [token])
 
   return (
-    <AuthShell title="Email verification" subtitle="Confirming your address">
+    <AuthShell title="Verify Email" subtitle="Confirming your address">
       <div className="text-center space-y-4">
         {state === 'pending' && <p className="text-ink-soft text-sm">Verifying your email…</p>}
         {state === 'ok' && (

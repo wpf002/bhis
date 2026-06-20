@@ -27,7 +27,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthShell title="Create your account" subtitle="Set up your church in a few minutes">
+    <AuthShell title="Create Account" subtitle="Set up your church in a couple of minutes">
       <form onSubmit={submit} className="space-y-5">
         <div className="grid grid-cols-2 gap-3">
           <Field label="First name" value={form.first_name} onChange={v => set('first_name', v)} required autoFocus />

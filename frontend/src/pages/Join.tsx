@@ -28,7 +28,7 @@ export default function JoinPage() {
   }
 
   return (
-    <AuthShell title="You're invited" subtitle="Join your church's dashboard on BHIS">
+    <AuthShell title="Accept Invitation" subtitle="Join your church’s dashboard on BHIS">
       <form onSubmit={submit} className="space-y-5">
         <div className="grid grid-cols-2 gap-3">
           <Field label="First name" value={form.first_name} onChange={v => set('first_name', v)} required autoFocus />

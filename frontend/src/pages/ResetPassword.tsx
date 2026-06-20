@@ -25,7 +25,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthShell title="Choose a new password" subtitle="Almost there">
+    <AuthShell title="New Password" subtitle="Choose a password to finish resetting">
       {token ? (
         <form onSubmit={submit} className="space-y-5">
           <Field label="New password" type="password" value={password} onChange={setPassword} placeholder="At least 8 characters" required autoFocus />
