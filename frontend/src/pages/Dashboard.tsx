@@ -78,11 +78,6 @@ export default function DashboardPage() {
               <div className="eyebrow mb-1">Overall Health</div>
               <h1 className="text-3xl text-ink">{TIER_WORD(healthScore)}</h1>
             </div>
-            <div className="grid grid-cols-3 gap-3 w-full sm:w-auto">
-              <Stat label="Respondents" value={String(dashboard.respondent_count || 0)} />
-              <Stat label="Drift Risk" value={(dashboard.drift_risk_level || '—').replace(/^\w/, c => c.toUpperCase())} />
-              <Stat label="Multiplying" value={`${dashboard.maturity_distribution?.['Multiplying Disciple'] || 0}%`} />
-            </div>
           </div>
         </div>
 
@@ -283,15 +278,6 @@ function SurveyStatusPanel({ survey }: { survey: ActiveSurvey | null }) {
           <Link to="/admin" className="text-sm text-ink-soft hover:text-ink">Manage this survey →</Link>
         </div>
       </div>
-    </div>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-warmth rounded-2xl px-4 py-3 border border-line text-center sm:text-left min-w-24">
-      <div className="text-[11px] text-ink-faint mb-0.5">{label}</div>
-      <div className="text-lg font-semibold text-ink">{value}</div>
     </div>
   )
 }
