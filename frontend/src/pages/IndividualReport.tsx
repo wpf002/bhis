@@ -77,18 +77,18 @@ export default function IndividualReportPage() {
   })
 
   return (
-    <div className="min-h-screen bg-canvas py-10 px-6">
+    <div className="min-h-screen bg-canvas py-8 sm:py-10 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <Logo />
           <div className="flex gap-2">
-            <a href={reportApi.individualExportUrl(token!, 'html')} target="_blank" rel="noreferrer" className="btn-ghost">Print / Save</a>
-            <button onClick={emailReport} className="btn-ghost">{emailSent ? 'Sent ✓' : 'Email me this'}</button>
+            <a href={reportApi.individualExportUrl(token!, 'html')} target="_blank" rel="noreferrer" className="btn-ghost px-3 py-1.5 whitespace-nowrap">Print</a>
+            <button onClick={emailReport} className="btn-ghost px-3 py-1.5 whitespace-nowrap">{emailSent ? 'Sent ✓' : 'Email Me'}</button>
           </div>
         </div>
 
         {/* Hero */}
-        <div className="card p-8 text-center mb-6 animate-fade-up">
+        <div className="card p-6 sm:p-8 text-center mb-6 animate-fade-up">
           <div className="eyebrow mb-5">Your Results</div>
           <div className="flex justify-center mb-5"><ScoreRing score={report.composite_score} /></div>
           <h1 className="text-2xl text-ink mb-2">{MATURITY_TIER_LABELS[report.maturity_tier] || report.maturity_tier}</h1>
@@ -107,7 +107,7 @@ export default function IndividualReportPage() {
 
         {/* Pillars */}
         <div className="card p-6 mb-6">
-          <div className="eyebrow mb-5">The Seven Areas</div>
+          <div className="eyebrow mb-5">The Six Areas</div>
           <div className="space-y-4">
             {pillarList.map(p => (
               <div key={p.key}>

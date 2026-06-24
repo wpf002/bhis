@@ -17,6 +17,20 @@ type Tab = typeof TABS[number]
 
 const TIER_WORD = (s: number) => s >= 81 ? 'Making Disciples' : s >= 41 ? 'Growing' : s >= 21 ? 'Nominal' : 'Disengaged'
 
+// Custom radar tick that wraps two-word labels onto two lines so they fit on
+// mobile without clipping. Recharts passes { payload: { value }, x, y, textAnchor }.
+function WrappingTick(props: any) {
+  const { x, y, payload, textAnchor } = props
+  const words = String(payload.value).split(' ')
+  return (
+    <text x={x} y={y} textAnchor={textAnchor} fill="#9A917F" fontSize={11}>
+      {words.map((w, i) => (
+        <tspan key={i} x={x} dy={i === 0 ? 0 : 13}>{w}</tspan>
+      ))}
+    </text>
+  )
+}
+
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>('Overview')
   const [selectedPillar, setSelectedPillar] = useState<string | null>(null)
@@ -82,36 +96,43 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-canvas pb-16">
       <Header name={dashboard.church?.name} count={dashboard.respondent_count || 0} instanceId={instanceId} onSignOut={clearAuth} />
 
-      <div className="max-w-6xl mx-auto px-6 pt-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
         {/* Hero */}
-        <div className="card p-7 mb-6">
-          <div className="flex flex-wrap items-center gap-8">
+        <div className="card p-6 sm:p-7 mb-6">
+          {/* Church identity — mobile only (header hides it on small screens). */}
+          <div className="sm:hidden text-center mb-5">
+            <div className="text-sm font-medium text-ink">{dashboard.church?.name || 'Your Church'}</div>
+            <div className="text-xs text-ink-faint">{dashboard.respondent_count || 0} {(dashboard.respondent_count || 0) === 1 ? 'person' : 'people'} responded</div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-8 text-center sm:text-left">
             <ScoreRing score={healthScore} />
-            <div className="flex-1 min-w-56">
+            <div className="flex-1 min-w-0">
               <div className="eyebrow mb-1">Overall Health</div>
               <h1 className="text-3xl text-ink">{TIER_WORD(healthScore)}</h1>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex flex-wrap gap-1 mb-6 bg-warmth rounded-full p-1 border border-line w-fit">
-          {TABS.map(t => (
-            <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
-              className={clsx('px-4 py-2 rounded-full text-sm transition-all', tab === t ? 'bg-surface text-ink shadow-soft' : 'text-ink-faint hover:text-ink-soft')}>
-              {t}
-            </button>
-          ))}
+        {/* Tabs — horizontal scroll on mobile, no wrap. */}
+        <div className="mb-6 -mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto">
+          <div className="inline-flex gap-1 bg-warmth rounded-full p-1 border border-line whitespace-nowrap">
+            {TABS.map(t => (
+              <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
+                className={clsx('px-3 sm:px-4 py-2 rounded-full text-sm transition-all whitespace-nowrap', tab === t ? 'bg-surface text-ink shadow-soft' : 'text-ink-faint hover:text-ink-soft')}>
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
 
         {tab === 'Overview' && (
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="card p-6 md:col-span-2">
+            <div className="card p-5 sm:p-6 md:col-span-2">
               <div className="eyebrow mb-4">The Six Areas of Health</div>
-              <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={radarData} outerRadius="68%" margin={{ top: 20, right: 60, bottom: 20, left: 60 }}>
+              <ResponsiveContainer width="100%" height={340}>
+                <RadarChart data={radarData} outerRadius="62%" margin={{ top: 28, right: 24, bottom: 28, left: 24 }}>
                   <PolarGrid stroke="#E9E1D3" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9A917F', fontSize: 12 }} tickSize={18} />
+                  <PolarAngleAxis dataKey="subject" tick={WrappingTick} tickSize={14} />
                   <Radar dataKey="score" stroke="#4F7355" fill="#4F7355" fillOpacity={0.18} strokeWidth={2} />
                 </RadarChart>
               </ResponsiveContainer>
@@ -192,7 +213,7 @@ export default function DashboardPage() {
         <PillarModal pillar={pillarList.find(p => p.key === selectedPillar)!} report={report} onClose={() => setSelectedPillar(null)} />
       )}
 
-      <p className="text-center text-xs text-ink-faint mt-10">
+      <p className="text-center text-xs text-ink-faint mt-10 px-4">
         Individual responses are private. Only aggregate results are shown.
       </p>
     </div>
@@ -203,31 +224,29 @@ function Header({ name, count, instanceId, onSignOut }: { name?: string; count: 
   const churchName = name || 'Your Church'
   return (
     <header className="border-b border-line bg-surface/80 backdrop-blur sticky top-0 z-10">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
         <Logo />
-        <div className="flex items-center gap-3 sm:gap-4">
-          {/* Church identity */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-sage-soft text-sage-dark flex items-center justify-center font-serif text-base flex-shrink-0">
-              {churchName.charAt(0).toUpperCase()}
-            </div>
-            <div className="hidden sm:block leading-tight max-w-[200px]">
-              <div className="text-sm font-medium text-ink truncate">{churchName}</div>
-              <div className="text-xs text-ink-faint">{count} {count === 1 ? 'person' : 'people'} responded</div>
-            </div>
+
+        {/* Church identity — desktop only (mobile shows it in the hero area). */}
+        <div className="hidden sm:flex items-center gap-2.5 flex-1 justify-end">
+          <div className="w-9 h-9 rounded-full bg-sage-soft text-sage-dark flex items-center justify-center font-serif text-base flex-shrink-0">
+            {churchName.charAt(0).toUpperCase()}
           </div>
-
-          <div className="hidden sm:block w-px h-8 bg-line" />
-
-          {/* Actions */}
-          <nav className="flex items-center gap-1">
-            <Link to="/admin" className="btn-ghost px-3 py-1.5 whitespace-nowrap">Manage</Link>
-            {instanceId && (
-              <a href={reportApi.churchExportUrl(instanceId, 'html')} target="_blank" rel="noreferrer" className="btn-ghost px-3 py-1.5">Export</a>
-            )}
-            <button onClick={onSignOut} className="text-sm text-ink-faint hover:text-ink-soft px-2.5 py-1.5 whitespace-nowrap">Sign out</button>
-          </nav>
+          <div className="leading-tight max-w-[200px]">
+            <div className="text-sm font-medium text-ink truncate">{churchName}</div>
+            <div className="text-xs text-ink-faint">{count} {count === 1 ? 'person' : 'people'} responded</div>
+          </div>
+          <div className="w-px h-8 bg-line mx-1" />
         </div>
+
+        {/* Actions — Export hidden on small screens to keep header tight. */}
+        <nav className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+          <Link to="/admin" className="btn-ghost px-2.5 sm:px-3 py-1.5 whitespace-nowrap">Manage</Link>
+          {instanceId && (
+            <a href={reportApi.churchExportUrl(instanceId, 'html')} target="_blank" rel="noreferrer" className="hidden sm:inline-flex btn-ghost px-3 py-1.5">Export</a>
+          )}
+          <button onClick={onSignOut} className="text-sm text-ink-faint hover:text-ink-soft px-2 sm:px-2.5 py-1.5 whitespace-nowrap">Sign out</button>
+        </nav>
       </div>
     </header>
   )
