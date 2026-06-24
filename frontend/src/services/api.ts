@@ -127,16 +127,11 @@ export const reportApi = {
   // plain link works fine.
   individualExportUrl: (token: string, fmt: 'html' | 'pdf' = 'html') =>
     `/api/v1/reports/individual/by-token/${token}/export?fmt=${fmt}`,
-  // Church export needs the JWT, which a browser link can't carry. Fetch via
-  // axios (so the interceptor attaches the token), then open the response as a
-  // blob in a new tab.
-  openChurchExport: async (instanceId: string, fmt: 'html' | 'pdf' = 'html') => {
-    const resp = await api.get(`/reports/church/${instanceId}/export?fmt=${fmt}`, { responseType: 'blob' })
-    const blob = new Blob([resp.data], { type: fmt === 'pdf' ? 'application/pdf' : 'text/html' })
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank')
-    setTimeout(() => URL.revokeObjectURL(url), 60_000)
-  },
+  // Church export needs the JWT, which a browser link can't carry. Fetch the
+  // HTML and let the caller render it (we show it inline in a modal iframe so
+  // it works in any sandboxed preview, no popup blocker, no extra tab).
+  fetchChurchExportHtml: (instanceId: string) =>
+    api.get<string>(`/reports/church/${instanceId}/export?fmt=html`, { responseType: 'text', transformResponse: (d) => d }).then(r => r.data),
 }
 
 export default api

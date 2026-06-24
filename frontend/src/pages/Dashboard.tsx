@@ -34,6 +34,7 @@ function WrappingTick(props: any) {
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>('Overview')
   const [selectedPillar, setSelectedPillar] = useState<string | null>(null)
+  const [exportHtml, setExportHtml] = useState<string | null>(null)
   const { clearAuth, churchId } = useAuthStore()
 
   const { data: dashboard, isLoading } = useQuery({
@@ -58,7 +59,7 @@ export default function DashboardPage() {
   if (!dashboard?.health_score) {
     return (
       <div className="min-h-screen bg-canvas">
-        <Header name={dashboard?.church?.name} count={dashboard?.active_survey?.response_count || 0} instanceId={null} onSignOut={clearAuth} />
+        <Header name={dashboard?.church?.name} count={dashboard?.active_survey?.response_count || 0} onExport={null} onSignOut={clearAuth} />
         <div className="max-w-6xl mx-auto px-6 pt-12">
           <SurveyStatusPanel survey={dashboard?.active_survey || null} />
         </div>
@@ -94,7 +95,15 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-canvas pb-16">
-      <Header name={dashboard.church?.name} count={dashboard.respondent_count || 0} instanceId={instanceId} onSignOut={clearAuth} />
+      <Header
+        name={dashboard.church?.name}
+        count={dashboard.respondent_count || 0}
+        onSignOut={clearAuth}
+        onExport={instanceId ? (async () => {
+          const html = await reportApi.fetchChurchExportHtml(instanceId)
+          setExportHtml(html)
+        }) : null}
+      />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8">
         {/* Hero */}
@@ -211,6 +220,8 @@ export default function DashboardPage() {
         <PillarModal pillar={pillarList.find(p => p.key === selectedPillar)!} report={report} onClose={() => setSelectedPillar(null)} />
       )}
 
+      {exportHtml && <ReportPreviewModal html={exportHtml} onClose={() => setExportHtml(null)} />}
+
       <p className="text-center text-xs text-ink-faint mt-10 px-4">
         Individual responses are private. Only aggregate results are shown.
       </p>
@@ -218,7 +229,7 @@ export default function DashboardPage() {
   )
 }
 
-function Header({ name, count, instanceId, onSignOut }: { name?: string; count: number; instanceId: string | null; onSignOut: () => void }) {
+function Header({ name, count, onExport, onSignOut }: { name?: string; count: number; onExport: (() => void) | null; onSignOut: () => void }) {
   const churchName = name || 'Your Church'
   return (
     <header className="border-b border-line bg-surface/80 backdrop-blur sticky top-0 z-10">
@@ -240,8 +251,8 @@ function Header({ name, count, instanceId, onSignOut }: { name?: string; count: 
         {/* Actions — Export hidden on small screens to keep header tight. */}
         <nav className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
           <Link to="/admin" className="btn-ghost px-2.5 sm:px-3 py-1.5 whitespace-nowrap">Manage</Link>
-          {instanceId && (
-            <button onClick={() => reportApi.openChurchExport(instanceId, 'html')} className="hidden sm:inline-flex btn-ghost px-3 py-1.5">Export</button>
+          {onExport && (
+            <button onClick={onExport} className="hidden sm:inline-flex btn-ghost px-3 py-1.5">Export</button>
           )}
           <button onClick={onSignOut} className="text-sm text-ink-faint hover:text-ink-soft px-2 sm:px-2.5 py-1.5 whitespace-nowrap">Sign out</button>
         </nav>
@@ -377,6 +388,28 @@ function PillarModal({ pillar, report, onClose }: { pillar: PillarRow; report?: 
             ))}
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function ReportPreviewModal({ html, onClose }: { html: string; onClose: () => void }) {
+  const printIt = () => {
+    const iframe = document.getElementById('bhis-report-iframe') as HTMLIFrameElement | null
+    iframe?.contentWindow?.focus()
+    iframe?.contentWindow?.print()
+  }
+  return (
+    <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex items-center justify-center px-3 py-6" role="dialog" aria-modal="true" aria-label="Church report" onClick={onClose}>
+      <div className="bg-surface rounded-2xl w-full max-w-4xl h-[90vh] flex flex-col shadow-lift" onClick={e => e.stopPropagation()}>
+        <div className="px-5 py-3 border-b border-line flex items-center justify-between flex-shrink-0">
+          <div className="eyebrow">Church Report</div>
+          <div className="flex items-center gap-2" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <button onClick={printIt} className="btn-ghost px-3 py-1.5">Print</button>
+            <button onClick={onClose} aria-label="Close" className="text-ink-faint hover:text-ink text-2xl leading-none px-2">×</button>
+          </div>
+        </div>
+        <iframe id="bhis-report-iframe" srcDoc={html} title="Church report" className="flex-1 w-full bg-white rounded-b-2xl border-0" />
       </div>
     </div>
   )

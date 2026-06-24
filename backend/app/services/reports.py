@@ -43,13 +43,37 @@ _PAGE = """<!DOCTYPE html>
 </style></head><body>{body}</body></html>"""
 
 
+# Friendly labels for pillars — must match what the UI shows. Keys here are the
+# canonical pillar keys used by the scoring engine.
+_PILLAR_LABELS = {
+    "doctrinal_integrity": "Doctrinal Integrity",
+    "spiritual_discipline": "Spiritual Discipline",
+    "transformation_fruit": "Spiritual Growth",
+    "discipleship_depth": "Discipleship Depth",
+    "church_health_trust": "Church Health & Trust",
+    "engagement_alignment": "Service",
+}
+# Drift is computed internally but never shown to the user.
+_HIDDEN_PILLARS = {"drift_vulnerability"}
+# Tier display labels (Grounded is merged into Growing in the UI).
+_TIER_LABELS = {
+    "Spiritually Disengaged": "Spiritually Disengaged",
+    "Nominal": "Nominal",
+    "Growing": "Growing",
+    "Grounded": "Growing",
+    "Multiplying Disciple": "Making Disciples",
+}
+
+
 def _pillar_table(pillar_scores: Dict[str, Any], pillar_statuses: Dict[str, Any] = None) -> str:
     rows = []
     for pillar, score in (pillar_scores or {}).items():
-        label = pillar.replace("_", " ").title()
+        if pillar in _HIDDEN_PILLARS:
+            continue
+        label = _PILLAR_LABELS.get(pillar, pillar.replace("_", " ").title())
         status = (pillar_statuses or {}).get(pillar, "")
         rows.append(f"<tr><td>{escape(label)}</td><td>{score}</td><td class='muted'>{escape(str(status))}</td></tr>")
-    return "<table><tr><th>Pillar</th><th>Score</th><th>Status</th></tr>" + "".join(rows) + "</table>"
+    return "<table><tr><th>Area</th><th>Score</th><th>Status</th></tr>" + "".join(rows) + "</table>"
 
 
 def _recommendations(recs: List[Dict[str, Any]]) -> str:
@@ -72,32 +96,37 @@ def _recommendations(recs: List[Dict[str, Any]]) -> str:
 def render_individual_html(data: Dict[str, Any]) -> str:
     warn = ""
     if data.get("credibility_warning"):
-        warn = ("<div class='rec warn'>Some answers appear inconsistent. This is offered gently — "
-                "it may be worth prayerful reflection, not a verdict.</div>")
+        warn = ("<div class='rec warn'>A few of your answers point in different directions, "
+                "which is true for most of us. Take it as a prompt to reflect, not a verdict.</div>")
+    tier = data.get("maturity_tier", "")
+    tier_display = _TIER_LABELS.get(tier, tier)
     body = (
-        f"<h1>Your BHIS Report</h1>"
-        f"<p class='muted'>Maturity tier: {escape(str(data.get('maturity_tier', '')))} · "
-        f"Drift risk: {escape(str(data.get('drift_risk_level', '')))}</p>"
+        f"<h1>Your Results</h1>"
+        f"<p class='muted'>{escape(tier_display)}</p>"
         f"<div class='score'>{data.get('composite_score', 0)}</div>"
         f"{warn}"
-        f"<h2>Pillars</h2>{_pillar_table(data.get('pillar_scores', {}), data.get('pillar_statuses', {}))}"
-        f"<h2>Recommendations</h2>{_recommendations(data.get('recommendations', []))}"
+        f"<h2>The Six Areas</h2>{_pillar_table(data.get('pillar_scores', {}), data.get('pillar_statuses', {}))}"
+        f"<h2>Where to Focus</h2>{_recommendations(data.get('recommendations', []))}"
     )
     return _PAGE.format(title="BHIS Individual Report", body=body)
 
 
 def render_church_html(data: Dict[str, Any]) -> str:
-    dist = data.get("maturity_distribution") or {}
+    raw_dist = data.get("maturity_distribution") or {}
+    # Merge Grounded into Growing to match the UI's 4-tier display.
+    merged_dist: Dict[str, float] = {}
+    for tier, pct in raw_dist.items():
+        display = _TIER_LABELS.get(tier, tier)
+        merged_dist[display] = merged_dist.get(display, 0.0) + float(pct)
     dist_rows = "".join(
-        f"<tr><td>{escape(str(k))}</td><td>{v}%</td></tr>" for k, v in dist.items()
+        f"<tr><td>{escape(k)}</td><td>{round(v, 1)}%</td></tr>" for k, v in merged_dist.items()
     )
     body = (
         f"<h1>Church Health Report</h1>"
-        f"<p class='muted'>Responses: {data.get('respondent_count', 0)} · "
-        f"Drift: {escape(str(data.get('drift_risk_level', '')))}</p>"
+        f"<p class='muted'>Responses: {data.get('respondent_count', 0)}</p>"
         f"<div class='score'>{data.get('health_score', 0)}</div>"
-        f"<h2>Pillars</h2>{_pillar_table(data.get('pillar_scores', {}))}"
-        f"<h2>Maturity Distribution</h2><table><tr><th>Tier</th><th>Share</th></tr>{dist_rows}</table>"
-        f"<h2>Recommendations</h2>{_recommendations(data.get('recommendations', []))}"
+        f"<h2>The Six Areas</h2>{_pillar_table(data.get('pillar_scores', {}))}"
+        f"<h2>Spiritual Maturity</h2><table><tr><th>Tier</th><th>Share</th></tr>{dist_rows}</table>"
+        f"<h2>Where to Focus</h2>{_recommendations(data.get('recommendations', []))}"
     )
     return _PAGE.format(title="BHIS Church Report", body=body)

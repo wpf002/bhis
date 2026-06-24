@@ -26,7 +26,8 @@ def test_individual_html_contains_score_and_tier():
         "recommendations": [], "credibility_warning": False,
     })
     assert "<!DOCTYPE html>" in html
-    assert "71.0" in html and "Grounded" in html
+    # Grounded is remapped to "Growing" in display.
+    assert "71.0" in html and "Growing" in html
     assert "Doctrinal Integrity" in html
 
 
@@ -36,7 +37,8 @@ def test_church_html_contains_archetype():
         "pillar_scores": {"discipleship_depth": 61.0}, "maturity_distribution": {"Grounded": 50.0},
         "drift_risk_level": "low", "recommendations": [],
     })
-    assert "Quietly Healthy" in html and "68.0" in html
+    # Archetype is no longer rendered in the UI; verify the score + a pillar name instead.
+    assert "68.0" in html and "Discipleship Depth" in html
 
 
 # ── individual export ─────────────────────────────────────────────────────────
@@ -67,7 +69,7 @@ async def test_export_individual_html(client, db):
     resp = await client.get(f"{REP}/individual/by-token/{token}/export")
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/html")
-    assert "Grounded" in resp.text
+    assert "Growing" in resp.text  # Grounded is remapped to Growing for display
 
 
 async def test_export_individual_pdf_when_weasyprint_absent(client, db):
@@ -124,7 +126,7 @@ async def test_export_church_html(client, db):
     instance, admin = await _church_with_agg(db, count=22)
     resp = await client.get(f"{REP}/church/{instance.id}/export", headers=_auth(admin))
     assert resp.status_code == 200
-    assert "Quietly Healthy" in resp.text
+    assert "Church Health Report" in resp.text
 
 
 async def test_export_church_works_at_low_count(client, db):
@@ -132,4 +134,4 @@ async def test_export_church_works_at_low_count(client, db):
     instance, admin = await _church_with_agg(db, count=3)
     resp = await client.get(f"{REP}/church/{instance.id}/export", headers=_auth(admin))
     assert resp.status_code == 200
-    assert "Quietly Healthy" in resp.text
+    assert "Church Health Report" in resp.text
