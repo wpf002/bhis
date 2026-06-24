@@ -224,8 +224,18 @@ export const PILLAR_LABELS: Record<string, string> = {
   transformation_fruit: 'Transformation & Fruit',
   discipleship_depth: 'Discipleship Depth',
   church_health_trust: 'Church Health & Trust',
-  engagement_alignment: 'Engagement & Alignment',
+  engagement_alignment: 'Service',
   drift_vulnerability: 'Drift & Vulnerability',
+}
+
+// Display labels for the maturity tiers — the backend stores the canonical
+// names, the UI shows these.
+export const MATURITY_TIER_LABELS: Record<string, string> = {
+  'Spiritually Disengaged': 'Spiritually Disengaged',
+  'Nominal': 'Nominal',
+  'Growing': 'Growing',
+  'Grounded': 'Grounded',
+  'Multiplying Disciple': 'Making Disciples',
 }
 
 // Warm, harmonious palette (sage / gold / clay / muted earth tones).

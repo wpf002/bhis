@@ -7,7 +7,7 @@ import {
 } from 'recharts'
 import { churchApi, reportApi } from '../services/api'
 import { useAuthStore } from '../hooks/useAuth'
-import { PILLAR_LABELS, PILLAR_COLORS, MATURITY_TIER_COLORS } from '../types'
+import { PILLAR_LABELS, PILLAR_COLORS, MATURITY_TIER_COLORS, MATURITY_TIER_LABELS } from '../types'
 import type { ChurchReport, SuppressedReport, MaturityTier, ActiveSurvey } from '../types'
 import { Logo, ScoreRing, Badge, statusFromScore, STATUS_TONE, EmptyState } from '../components/ui'
 import clsx from 'clsx'
@@ -15,7 +15,7 @@ import clsx from 'clsx'
 const TABS = ['Overview', 'The Seven Areas', 'Your People', 'Where to Focus'] as const
 type Tab = typeof TABS[number]
 
-const TIER_WORD = (s: number) => s >= 81 ? 'Multiplying' : s >= 61 ? 'Grounded' : s >= 41 ? 'Growing' : s >= 21 ? 'Nominal' : 'Disengaged'
+const TIER_WORD = (s: number) => s >= 81 ? 'Making Disciples' : s >= 61 ? 'Grounded' : s >= 41 ? 'Growing' : s >= 21 ? 'Nominal' : 'Disengaged'
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>('Overview')
@@ -61,7 +61,9 @@ export default function DashboardPage() {
   }))
   const radarData = pillarList.slice(0, 6).map(p => ({ subject: p.label.split(' ')[0], score: p.score }))
   const maturityData = Object.entries(dashboard.maturity_distribution || {}).map(([tier, pct]) => ({
-    tier, pct: pct as number, color: MATURITY_TIER_COLORS[tier as MaturityTier] || '#9A917F',
+    tier: MATURITY_TIER_LABELS[tier] || tier,
+    pct: pct as number,
+    color: MATURITY_TIER_COLORS[tier as MaturityTier] || '#9A917F',
   }))
   const healthScore = dashboard.health_score || 0
 

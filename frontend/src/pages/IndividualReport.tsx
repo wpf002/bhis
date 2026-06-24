@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { reportApi } from '../services/api'
-import { PILLAR_LABELS } from '../types'
+import { PILLAR_LABELS, MATURITY_TIER_LABELS } from '../types'
 import type { Recommendation } from '../types'
 import { Logo, ScoreRing, STATUS_TONE } from '../components/ui'
 import clsx from 'clsx'
@@ -90,7 +90,7 @@ export default function IndividualReportPage() {
         <div className="card p-8 text-center mb-6 animate-fade-up">
           <div className="eyebrow mb-5">Your Results</div>
           <div className="flex justify-center mb-5"><ScoreRing score={report.composite_score} /></div>
-          <h1 className="text-2xl text-ink mb-2">{report.maturity_tier}</h1>
+          <h1 className="text-2xl text-ink mb-2">{MATURITY_TIER_LABELS[report.maturity_tier] || report.maturity_tier}</h1>
           <p className="text-ink-soft text-sm max-w-md mx-auto leading-relaxed">{TIER_NOTE[report.maturity_tier] || ''}</p>
 
           {report.credibility_warning && (
