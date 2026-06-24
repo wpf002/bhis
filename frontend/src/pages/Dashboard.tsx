@@ -7,7 +7,7 @@ import {
 } from 'recharts'
 import { churchApi, reportApi } from '../services/api'
 import { useAuthStore } from '../hooks/useAuth'
-import { PILLAR_LABELS, PILLAR_COLORS, MATURITY_TIER_COLORS, MATURITY_TIER_LABELS } from '../types'
+import { PILLAR_LABELS, PILLAR_SHORT_LABELS, PILLAR_COLORS, MATURITY_TIER_COLORS, MATURITY_TIER_LABELS } from '../types'
 import type { ChurchReport, SuppressedReport, MaturityTier, ActiveSurvey } from '../types'
 import { Logo, ScoreRing, Badge, statusFromScore, STATUS_TONE, EmptyState } from '../components/ui'
 import clsx from 'clsx'
@@ -59,7 +59,7 @@ export default function DashboardPage() {
     color: PILLAR_COLORS[key],
     status: statusFromScore(pillarScores[key] || 0),
   }))
-  const radarData = pillarList.slice(0, 6).map(p => ({ subject: p.label.split(' ')[0], score: p.score }))
+  const radarData = pillarList.slice(0, 6).map(p => ({ subject: PILLAR_SHORT_LABELS[p.key] || p.label, score: p.score }))
   const maturityData = Object.entries(dashboard.maturity_distribution || {}).map(([tier, pct]) => ({
     tier: MATURITY_TIER_LABELS[tier] || tier,
     pct: pct as number,
@@ -162,7 +162,7 @@ export default function DashboardPage() {
               <div className="space-y-3.5">
                 {pillarList.slice(0, 6).map(p => (
                   <div key={p.key} className="flex items-center gap-3">
-                    <div className="w-28 text-xs text-ink-soft truncate">{p.label.split(' ')[0]}</div>
+                    <div className="w-28 text-xs text-ink-soft truncate">{PILLAR_SHORT_LABELS[p.key] || p.label}</div>
                     <div className="flex-1 h-2 bg-warmth rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${p.score}%`, background: p.color }} />
                     </div>

@@ -221,11 +221,23 @@ export interface Recommendation {
 export const PILLAR_LABELS: Record<string, string> = {
   doctrinal_integrity: 'Doctrinal Integrity',
   spiritual_discipline: 'Spiritual Discipline',
-  transformation_fruit: 'Transformation & Fruit',
+  transformation_fruit: 'Spiritual Growth',
   discipleship_depth: 'Discipleship Depth',
   church_health_trust: 'Church Health & Trust',
   engagement_alignment: 'Service',
   drift_vulnerability: 'Drift & Vulnerability',
+}
+
+// Short labels for tight spots (radar chart axes, etc.). Hand-picked so each
+// is distinct — auto-splitting the first word collides on "Spiritual".
+export const PILLAR_SHORT_LABELS: Record<string, string> = {
+  doctrinal_integrity: 'Doctrine',
+  spiritual_discipline: 'Discipline',
+  transformation_fruit: 'Growth',
+  discipleship_depth: 'Disciple',
+  church_health_trust: 'Church',
+  engagement_alignment: 'Service',
+  drift_vulnerability: 'Drift',
 }
 
 // Display labels for the maturity tiers — the backend stores the canonical
