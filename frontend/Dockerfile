@@ -13,4 +13,5 @@ FROM nginx:1.27-alpine
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 ENV BACKEND_URL=http://backend:8000
+ENV PORT=80
 EXPOSE 80

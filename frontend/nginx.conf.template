@@ -1,5 +1,6 @@
 server {
-    listen       80;
+    # Bind to whatever port the host provides (Railway sets $PORT); default 80 locally.
+    listen       ${PORT};
     server_name  _;
     root   /usr/share/nginx/html;
     index  index.html;
