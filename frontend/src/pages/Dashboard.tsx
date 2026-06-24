@@ -12,10 +12,10 @@ import type { ChurchReport, SuppressedReport, MaturityTier, ActiveSurvey } from 
 import { Logo, ScoreRing, Badge, statusFromScore, STATUS_TONE, EmptyState } from '../components/ui'
 import clsx from 'clsx'
 
-const TABS = ['Overview', 'The Seven Areas', 'Your People', 'Where to Focus'] as const
+const TABS = ['Overview', 'The Six Areas', 'Your People', 'Where to Focus'] as const
 type Tab = typeof TABS[number]
 
-const TIER_WORD = (s: number) => s >= 81 ? 'Making Disciples' : s >= 61 ? 'Grounded' : s >= 41 ? 'Growing' : s >= 21 ? 'Nominal' : 'Disengaged'
+const TIER_WORD = (s: number) => s >= 81 ? 'Making Disciples' : s >= 41 ? 'Growing' : s >= 21 ? 'Nominal' : 'Disengaged'
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>('Overview')
@@ -60,10 +60,21 @@ export default function DashboardPage() {
     status: statusFromScore(pillarScores[key] || 0),
   }))
   const radarData = pillarList.slice(0, 6).map(p => ({ subject: PILLAR_SHORT_LABELS[p.key] || p.label, score: p.score }))
-  const maturityData = Object.entries(dashboard.maturity_distribution || {}).map(([tier, pct]) => ({
-    tier: MATURITY_TIER_LABELS[tier] || tier,
-    pct: pct as number,
-    color: MATURITY_TIER_COLORS[tier as MaturityTier] || '#9A917F',
+  // Merge Grounded into Growing for the UI (4 display tiers, not 5).
+  const _rawDist = dashboard.maturity_distribution || {}
+  const _merged: Record<string, number> = {}
+  for (const [tier, pct] of Object.entries(_rawDist)) {
+    const display = MATURITY_TIER_LABELS[tier] || tier
+    _merged[display] = (_merged[display] || 0) + (pct as number)
+  }
+  const _tierColorByDisplay: Record<string, string> = {
+    'Spiritually Disengaged': MATURITY_TIER_COLORS['Spiritually Disengaged'],
+    'Nominal': MATURITY_TIER_COLORS['Nominal'],
+    'Growing': MATURITY_TIER_COLORS['Growing'],
+    'Making Disciples': MATURITY_TIER_COLORS['Multiplying Disciple'],
+  }
+  const maturityData = Object.entries(_merged).map(([tier, pct]) => ({
+    tier, pct, color: _tierColorByDisplay[tier] || '#9A917F',
   }))
   const healthScore = dashboard.health_score || 0
 
@@ -96,11 +107,11 @@ export default function DashboardPage() {
         {tab === 'Overview' && (
           <div className="grid md:grid-cols-3 gap-4">
             <div className="card p-6 md:col-span-2">
-              <div className="eyebrow mb-4">The Seven Areas of Health</div>
+              <div className="eyebrow mb-4">The Six Areas of Health</div>
               <ResponsiveContainer width="100%" height={300}>
-                <RadarChart data={radarData}>
+                <RadarChart data={radarData} outerRadius="68%" margin={{ top: 20, right: 60, bottom: 20, left: 60 }}>
                   <PolarGrid stroke="#E9E1D3" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9A917F', fontSize: 12 }} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9A917F', fontSize: 12 }} tickSize={18} />
                   <Radar dataKey="score" stroke="#4F7355" fill="#4F7355" fillOpacity={0.18} strokeWidth={2} />
                 </RadarChart>
               </ResponsiveContainer>
@@ -124,7 +135,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {tab === 'The Seven Areas' && (
+        {tab === 'The Six Areas' && (
           <div className="grid sm:grid-cols-2 gap-3">
             {pillarList.map(p => (
               <button key={p.key} onClick={() => setSelectedPillar(p.key)} aria-label={`View ${p.label}`}

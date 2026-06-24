@@ -74,7 +74,6 @@ export type Pillar =
   | 'discipleship_depth'
   | 'church_health_trust'
   | 'engagement_alignment'
-  | 'drift_vulnerability'
 
 export interface QuestionOption {
   id: string
@@ -119,7 +118,7 @@ export type MaturityTier =
   | 'Spiritually Disengaged'
   | 'Nominal'
   | 'Growing'
-  | 'Grounded'
+  | 'Grounded'  // legacy tier from backend; remapped to "Growing" in MATURITY_TIER_LABELS
   | 'Multiplying Disciple'
 
 export type DriftRisk = 'low' | 'moderate' | 'high' | 'critical'
@@ -225,7 +224,6 @@ export const PILLAR_LABELS: Record<string, string> = {
   discipleship_depth: 'Discipleship Depth',
   church_health_trust: 'Church Health & Trust',
   engagement_alignment: 'Service',
-  drift_vulnerability: 'Drift & Vulnerability',
 }
 
 // Short labels for tight spots (radar chart axes, etc.). Hand-picked so each
@@ -233,20 +231,20 @@ export const PILLAR_LABELS: Record<string, string> = {
 export const PILLAR_SHORT_LABELS: Record<string, string> = {
   doctrinal_integrity: 'Doctrine',
   spiritual_discipline: 'Discipline',
-  transformation_fruit: 'Growth',
-  discipleship_depth: 'Disciple',
+  transformation_fruit: 'Spiritual Growth',
+  discipleship_depth: 'Discipleship',
   church_health_trust: 'Church',
   engagement_alignment: 'Service',
-  drift_vulnerability: 'Drift',
 }
 
 // Display labels for the maturity tiers — the backend stores the canonical
-// names, the UI shows these.
+// names, the UI shows these. "Grounded" is collapsed into "Growing" for display
+// since the methodology was simplified to 4 tiers in the UI.
 export const MATURITY_TIER_LABELS: Record<string, string> = {
   'Spiritually Disengaged': 'Spiritually Disengaged',
   'Nominal': 'Nominal',
   'Growing': 'Growing',
-  'Grounded': 'Grounded',
+  'Grounded': 'Growing',
   'Multiplying Disciple': 'Making Disciples',
 }
 
@@ -258,13 +256,12 @@ export const PILLAR_COLORS: Record<string, string> = {
   discipleship_depth: '#5E8B86',   // muted teal
   church_health_trust: '#6E86A8',  // dusty blue
   engagement_alignment: '#9A8C4E', // olive
-  drift_vulnerability: '#A8754E',  // warm brown
 }
 
 export const MATURITY_TIER_COLORS: Record<MaturityTier, string> = {
   'Spiritually Disengaged': '#BE6E47', // clay
   'Nominal': '#C99A5B',                // tan
   'Growing': '#C39A4A',                // gold
-  'Grounded': '#5E8560',               // green
+  'Grounded': '#C39A4A',               // remapped to Growing in the UI, same color
   'Multiplying Disciple': '#4F7355',   // deep sage
 }

@@ -10,8 +10,9 @@ import clsx from 'clsx'
 const TIER_NOTE: Record<string, string> = {
   'Spiritually Disengaged': 'A good place to start. Small, regular steps add up.',
   'Nominal': 'There’s a foundation here. A bit more consistency can take you further.',
+  // 'Grounded' is remapped to 'Growing' for display, so this note covers both.
   'Growing': 'You’re growing. Stay with the practices that are stretching you.',
-  'Grounded': 'You’re well-rooted. A good time to start helping others grow.',
+  'Grounded': 'You’re growing. Stay with the practices that are stretching you.',
   'Multiplying Disciple': 'You’re bearing fruit and helping others do the same.',
 }
 
