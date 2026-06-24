@@ -26,8 +26,8 @@ def test_individual_html_contains_score_and_tier():
         "recommendations": [], "credibility_warning": False,
     })
     assert "<!DOCTYPE html>" in html
-    # Grounded is remapped to "Growing" in display.
-    assert "71.0" in html and "Growing" in html
+    # Score is shown rounded (71.0 -> 71); Grounded remaps to "Growing".
+    assert ">71<" in html and "Growing" in html
     assert "Doctrinal Integrity" in html
 
 
@@ -37,8 +37,8 @@ def test_church_html_contains_archetype():
         "pillar_scores": {"discipleship_depth": 61.0}, "maturity_distribution": {"Grounded": 50.0},
         "drift_risk_level": "low", "recommendations": [],
     })
-    # Archetype is no longer rendered in the UI; verify the score + a pillar name instead.
-    assert "68.0" in html and "Discipleship Depth" in html
+    # Archetype is no longer rendered; score shown rounded (68.0 -> 68).
+    assert ">68<" in html and "Discipleship Depth" in html
 
 
 # ── individual export ─────────────────────────────────────────────────────────
