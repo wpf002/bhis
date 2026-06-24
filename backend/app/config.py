@@ -1,8 +1,20 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://bhis:bhis_dev@localhost:5432/bhis"
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _ensure_async_driver(cls, v: str) -> str:
+        # Hosts like Railway/Render expose Postgres as "postgresql://..."; the app
+        # (and alembic, which imports this Settings) needs the asyncpg driver.
+        if v.startswith("postgres://"):
+            v = "postgresql://" + v[len("postgres://"):]
+        if v.startswith("postgresql://") and not v.startswith("postgresql+"):
+            v = "postgresql+asyncpg://" + v[len("postgresql://"):]
+        return v
     REDIS_URL: str = "redis://localhost:6379"
     SECRET_KEY: str = "dev-secret-key"
     ALGORITHM: str = "HS256"
