@@ -123,11 +123,20 @@ export const reportApi = {
   claim: (sessionToken: string) =>
     api.post('/reports/claim', { session_token: sessionToken }).then(r => r.data),
   mine: () => api.get('/reports/mine').then(r => r.data),
-  // Export URLs are plain links the browser can open/download directly.
+  // Individual export is anonymous (auth is the token in the URL itself), so a
+  // plain link works fine.
   individualExportUrl: (token: string, fmt: 'html' | 'pdf' = 'html') =>
     `/api/v1/reports/individual/by-token/${token}/export?fmt=${fmt}`,
-  churchExportUrl: (instanceId: string, fmt: 'html' | 'pdf' = 'html') =>
-    `/api/v1/reports/church/${instanceId}/export?fmt=${fmt}`,
+  // Church export needs the JWT, which a browser link can't carry. Fetch via
+  // axios (so the interceptor attaches the token), then open the response as a
+  // blob in a new tab.
+  openChurchExport: async (instanceId: string, fmt: 'html' | 'pdf' = 'html') => {
+    const resp = await api.get(`/reports/church/${instanceId}/export?fmt=${fmt}`, { responseType: 'blob' })
+    const blob = new Blob([resp.data], { type: fmt === 'pdf' ? 'application/pdf' : 'text/html' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  },
 }
 
 export default api

@@ -241,7 +241,7 @@ function Header({ name, count, instanceId, onSignOut }: { name?: string; count: 
         <nav className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
           <Link to="/admin" className="btn-ghost px-2.5 sm:px-3 py-1.5 whitespace-nowrap">Manage</Link>
           {instanceId && (
-            <a href={reportApi.churchExportUrl(instanceId, 'html')} target="_blank" rel="noreferrer" className="hidden sm:inline-flex btn-ghost px-3 py-1.5">Export</a>
+            <button onClick={() => reportApi.openChurchExport(instanceId, 'html')} className="hidden sm:inline-flex btn-ghost px-3 py-1.5">Export</button>
           )}
           <button onClick={onSignOut} className="text-sm text-ink-faint hover:text-ink-soft px-2 sm:px-2.5 py-1.5 whitespace-nowrap">Sign out</button>
         </nav>
