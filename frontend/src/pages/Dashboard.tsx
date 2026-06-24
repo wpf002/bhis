@@ -12,7 +12,7 @@ import type { ChurchReport, SuppressedReport, MaturityTier, ActiveSurvey } from 
 import { Logo, ScoreRing, Badge, statusFromScore, STATUS_TONE, EmptyState } from '../components/ui'
 import clsx from 'clsx'
 
-const TABS = ['Overview', 'The Six Areas', 'Your People', 'Where to Focus'] as const
+const TABS = ['Overview', 'Areas', 'People', 'Focus'] as const
 type Tab = typeof TABS[number]
 
 const TIER_WORD = (s: number) => s >= 81 ? 'Making Disciples' : s >= 41 ? 'Growing' : s >= 21 ? 'Nominal' : 'Disengaged'
@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const { data: report } = useQuery({
     queryKey: ['churchReport', instanceId],
     queryFn: () => reportApi.church(instanceId!),
-    enabled: !!instanceId && (tab === 'Where to Focus' || !!selectedPillar),
+    enabled: !!instanceId && (tab === 'Focus' || !!selectedPillar),
   })
 
   if (!churchId) return <Navigate to="/onboarding" replace />
@@ -113,16 +113,14 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Tabs — horizontal scroll on mobile, no wrap. */}
-        <div className="mb-6 -mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto">
-          <div className="inline-flex gap-1 bg-warmth rounded-full p-1 border border-line whitespace-nowrap">
-            {TABS.map(t => (
-              <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
-                className={clsx('px-3 sm:px-4 py-2 rounded-full text-sm transition-all whitespace-nowrap', tab === t ? 'bg-surface text-ink shadow-soft' : 'text-ink-faint hover:text-ink-soft')}>
-                {t}
-              </button>
-            ))}
-          </div>
+        {/* Tabs — fits at 375px without scrolling. */}
+        <div className="mb-6 inline-flex gap-1 bg-warmth rounded-full p-1 border border-line">
+          {TABS.map(t => (
+            <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
+              className={clsx('px-3 sm:px-4 py-2 rounded-full text-sm transition-all whitespace-nowrap', tab === t ? 'bg-surface text-ink shadow-soft' : 'text-ink-faint hover:text-ink-soft')}>
+              {t}
+            </button>
+          ))}
         </div>
 
         {tab === 'Overview' && (
@@ -156,7 +154,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {tab === 'The Six Areas' && (
+        {tab === 'Areas' && (
           <div className="grid sm:grid-cols-2 gap-3">
             {pillarList.map(p => (
               <button key={p.key} onClick={() => setSelectedPillar(p.key)} aria-label={`View ${p.label}`}
@@ -174,7 +172,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {tab === 'Your People' && (
+        {tab === 'People' && (
           <div className="grid md:grid-cols-2 gap-4">
             <div className="card p-6">
               <div className="eyebrow mb-4">Spiritual Maturity Across the Congregation</div>
@@ -206,7 +204,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {tab === 'Where to Focus' && <FocusTab report={report} />}
+        {tab === 'Focus' && <FocusTab report={report} />}
       </div>
 
       {selectedPillar && (
